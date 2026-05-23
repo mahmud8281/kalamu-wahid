@@ -1,0 +1,190 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}CEO Dashboard — Kalamu Wahid{% endblock %}
+{% block page_title %}CEO / MD Dashboard{% endblock %}
+{% block page_subtitle %}Full business overview and analytics{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  {% for label, value, icon, grad, sub in [
+    ('Total Revenue',   '₦'~'{:,.0f}'.format(total_revenue),  'fa-naira-sign',  'from-kgreen to-kgreen-light', 'All time'),
+    ('Amount Paid',     '₦'~'{:,.0f}'.format(total_paid),     'fa-circle-check','from-emerald-600 to-emerald-500','Collected'),
+    ('Outstanding',     '₦'~'{:,.0f}'.format(total_balance),  'fa-clock-rotate-left','from-amber-500 to-amber-400','Balance due'),
+    ('Total Orders',    orders|length,                          'fa-list-check',  'from-blue-600 to-blue-500',  'All orders'),
+  ] %}
+  <div class="card p-5">
+    <div class="flex justify-between items-start mb-3">
+      <div>
+        <p class="text-gray-400 text-xs font-medium uppercase tracking-wide">{{ label }}</p>
+        <p class="text-gray-400 text-xs mt-0.5">{{ sub }}</p>
+      </div>
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br {{ grad }} flex items-center justify-center flex-shrink-0">
+        <i class="fa-solid {{ icon }} text-white text-sm"></i>
+      </div>
+    </div>
+    <p class="font-display text-2xl font-bold text-gray-800">{{ value }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Second row stats -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  {% for label, value, icon, color in [
+    ('Pending',    pending,               'fa-hourglass-half', 'text-amber-500'),
+    ('In Progress',progress,              'fa-gears',          'text-blue-500'),
+    ('Ready',      ready,                 'fa-box-open',       'text-emerald-500'),
+    ('Delivered',  delivered,             'fa-truck',          'text-gray-500'),
+  ] %}
+  <div class="card p-5 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+      <i class="fa-solid {{ icon }} {{ color }} text-xl"></i>
+    </div>
+    <div>
+      <p class="text-gray-400 text-xs">{{ label }}</p>
+      <p class="font-bold text-2xl text-gray-800">{{ value }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Charts row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+  <!-- Revenue chart -->
+  <div class="card p-6 lg:col-span-2">
+    <div class="flex justify-between items-center mb-5">
+      <div>
+        <h3 class="font-semibold text-gray-800">Revenue — Last 6 Months</h3>
+        <p class="text-gray-400 text-xs mt-0.5">Monthly income overview</p>
+      </div>
+      <span class="text-xs bg-kgreen/10 text-kgreen px-3 py-1 rounded-full font-medium">₦</span>
+    </div>
+    <canvas id="revenueChart" height="100"></canvas>
+  </div>
+
+  <!-- Style popularity -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-gray-800 mb-1">Popular Styles</h3>
+    <p class="text-gray-400 text-xs mb-5">Orders by style type</p>
+    <canvas id="styleChart" height="200"></canvas>
+  </div>
+</div>
+
+<!-- Recent orders + customers -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+  <!-- Recent orders -->
+  <div class="card p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-semibold text-gray-800">Recent Orders</h3>
+      <a href="{{ url_for('admin.orders') }}" class="text-gold text-xs font-medium hover:underline">View all</a>
+    </div>
+    <div class="space-y-3">
+      {% for o in orders[:6] %}
+      <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-kgreen/5 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid fa-scissors text-kgreen text-xs"></i>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-800">{{ o.user.full_name }}</p>
+            <p class="text-xs text-gray-400">{{ o.style_type }} · #{{ o.id }}</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-sm font-semibold text-gray-800">₦{{ '{:,.0f}'.format(o.amount) }}</p>
+          <span class="badge badge-{{ o.status.lower().replace(' ','-') }}
+            {% if o.status == 'Pending' %}badge-pending
+            {% elif o.status == 'In Progress' %}badge-progress
+            {% elif o.status == 'Ready' %}badge-ready
+            {% else %}badge-delivered{% endif %}">
+            {{ o.status }}
+          </span>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-gray-400 text-sm text-center py-6">No orders yet</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Top customers -->
+  <div class="card p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-semibold text-gray-800">Registered Customers</h3>
+      <a href="{{ url_for('admin.customers') }}" class="text-gold text-xs font-medium hover:underline">View all</a>
+    </div>
+    <div class="space-y-3">
+      {% for c in customers[:6] %}
+      <a href="{{ url_for('admin.customer_detail', user_id=c.id) }}"
+         class="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0 hover:bg-gray-50 rounded-lg px-2 transition-colors">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-kgreen to-kgreen-light flex items-center justify-center flex-shrink-0">
+          <span class="text-gold font-bold text-sm">{{ c.full_name[0].upper() }}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-800 truncate">{{ c.full_name }}</p>
+          <p class="text-xs text-gray-400 truncate">{{ c.phone }}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs text-gray-400">{{ c.orders|length }} order{{ 's' if c.orders|length != 1 }}</p>
+        </div>
+      </a>
+      {% else %}
+      <p class="text-gray-400 text-sm text-center py-6">No customers yet</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const months  = {{ monthly_data | map(attribute='month')   | list | tojson }};
+const revenue = {{ monthly_data | map(attribute='revenue') | list | tojson }};
+const styles  = {{ style_data | map(attribute=0) | list | tojson }};
+const counts  = {{ style_data | map(attribute=1) | list | tojson }};
+
+new Chart(document.getElementById('revenueChart'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [{
+      label: 'Revenue (₦)',
+      data: revenue,
+      backgroundColor: 'rgba(201,168,76,0.15)',
+      borderColor: '#C9A84C',
+      borderWidth: 2,
+      borderRadius: 8,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { grid: { color:'rgba(0,0,0,0.04)' }, ticks: { font:{size:11} } },
+      x: { grid: { display: false }, ticks: { font:{size:11} } }
+    }
+  }
+});
+
+new Chart(document.getElementById('styleChart'), {
+  type: 'doughnut',
+  data: {
+    labels: styles,
+    datasets: [{
+      data: counts,
+      backgroundColor: ['#1B4332','#C9A84C','#2D6A4F','#F0D080','#9A7B2F','#0D2B1E'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position:'bottom', labels:{ font:{size:11}, padding:12 } }
+    },
+    cutout: '65%',
+  }
+});
+</script>
+{% endblock %}

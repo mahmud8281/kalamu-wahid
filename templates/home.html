@@ -1,0 +1,334 @@
+{% extends 'base.html' %}
+{% block title %}Kalamu Wahid — Premium Hausa Tailoring{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-kgreen-dark via-kgreen to-kgreen-light">
+  <div class="absolute inset-0 opacity-10" style="background-image:url('https://www.transparenttextures.com/patterns/arabesque.png')"></div>
+  <div class="absolute top-20 right-20 w-72 h-72 bg-gold/10 rounded-full blur-3xl"></div>
+  <div class="absolute bottom-20 left-20 w-96 h-96 bg-gold/5 rounded-full blur-3xl"></div>
+  <div class="relative z-10 text-center px-4 max-w-4xl mx-auto">
+    <div class="inline-flex items-center gap-2 bg-gold/20 border border-gold/30 rounded-full px-4 py-2 text-gold text-sm font-medium mb-6">
+      <i class="fa-solid fa-star text-xs"></i> Premium Hausa Fashion Since 2010
+    </div>
+    <h1 class="font-display text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+      Crafting Your <span class="text-gold">Perfect</span><br/>Hausa Style
+    </h1>
+    <p class="text-kcream/80 text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed">
+      From elegant Agbada to refined Senator styles — we bring your fashion vision to life with master craftsmanship and cultural pride.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a href="{{ url_for('order.place_order') }}" class="btn-gold px-8 py-4 rounded-full text-base shadow-xl">
+        <i class="fa-solid fa-scissors mr-2"></i> Place Your Order
+      </a>
+      <a href="#gallery" class="border border-gold/50 text-gold hover:bg-gold/10 px-8 py-4 rounded-full text-base font-semibold transition-all">
+        <i class="fa-solid fa-images mr-2"></i> View Gallery
+      </a>
+    </div>
+    <div class="mt-14 grid grid-cols-3 gap-6 max-w-sm mx-auto text-center">
+      <div><p class="font-display text-3xl font-bold text-gold">500+</p><p class="text-kcream/60 text-xs mt-1">Happy Clients</p></div>
+      <div><p class="font-display text-3xl font-bold text-gold">14+</p><p class="text-kcream/60 text-xs mt-1">Years Experience</p></div>
+      <div><p class="font-display text-3xl font-bold text-gold">100%</p><p class="text-kcream/60 text-xs mt-1">Satisfaction</p></div>
+    </div>
+  </div>
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+    <i class="fa-solid fa-chevron-down text-gold/50 text-xl"></i>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services" class="py-20 px-4 max-w-7xl mx-auto">
+  <div class="text-center mb-12">
+    <p class="text-gold font-semibold text-sm tracking-widest uppercase mb-2">What We Offer</p>
+    <h2 class="section-title text-4xl font-bold">Our Tailoring Services</h2>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% set services = [
+      ('fa-crown','Agbada','Grand flowing robes for ceremonies and celebrations','#C9A84C'),
+      ('fa-shirt','Senator','Sharp modern political wear for the distinguished man','#1B4332'),
+      ('fa-vest','Kaftan','Elegant everyday and special occasion wear','#9A7B2F'),
+      ('fa-person-dress','Jalabiya','Flowing traditional attire with cultural grace','#2D6A4F'),
+      ('fa-ring','Wedding Wear','Bespoke bridal and groom traditional outfits','#C9A84C'),
+      ('fa-star','Custom Designs','Bring your own style — we make it reality','#1B4332'),
+    ] %}
+    {% for icon, name, desc, color in services %}
+    <div class="card p-6 group cursor-pointer">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all group-hover:scale-110"
+           style="background:{{ color }}20;">
+        <i class="fa-solid {{ icon }} text-xl" style="color:{{ color }}"></i>
+      </div>
+      <h3 class="font-semibold text-kgreen text-lg mb-2">{{ name }}</h3>
+      <p class="text-gray-500 text-sm leading-relaxed">{{ desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- GALLERY PREVIEW -->
+<section id="gallery" class="py-20 bg-kgreen/5 px-4">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-12">
+      <p class="text-gold font-semibold text-sm tracking-widest uppercase mb-2">Our Work</p>
+      <h2 class="section-title text-4xl font-bold">Fashion Gallery</h2>
+      <p class="text-gray-500 text-sm mt-3 max-w-xl mx-auto">Explore our finest Hausa tailoring works — from grand Agbada to refined Senator styles.</p>
+    </div>
+
+    {% if gallery %}
+
+    <!-- Category filter tabs -->
+    <div class="flex gap-2 justify-center flex-wrap mb-8">
+      <button onclick="filterGallery('all')" id="tab-all"
+        class="gallery-tab active-tab px-5 py-2 rounded-full text-sm font-medium transition-all bg-kgreen text-gold">
+        All
+      </button>
+      {% set categories = gallery | map(attribute='category') | unique | list %}
+      {% for cat in categories %}
+      <button onclick="filterGallery('{{ cat }}')" id="tab-{{ cat | replace(' ','-') }}"
+        class="gallery-tab px-5 py-2 rounded-full text-sm font-medium transition-all bg-white text-gray-500 hover:bg-kgreen/10 border border-gray-100">
+        {{ cat }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- Gallery grid -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="gallery-grid">
+      {% for img in gallery %}
+      <div class="gallery-item aspect-square rounded-2xl overflow-hidden group relative cursor-pointer shadow-sm hover:shadow-xl transition-all"
+           data-category="{{ img.category }}"
+           onclick="openLightbox('{{ img.filename }}', '{{ img.title or img.category }}', '{{ img.category }}')">
+        <img src="/uploads/{{ img.filename }}"
+             alt="{{ img.title or img.category }}"
+             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>
+        <!-- Overlay -->
+        <div class="absolute inset-0 bg-gradient-to-t from-kgreen/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end p-4">
+          <div>
+            {% if img.featured %}
+            <span class="text-xs bg-gold text-kgreen font-bold px-2 py-0.5 rounded-full mb-2 inline-block">Featured</span>
+            {% endif %}
+            <p class="text-white font-semibold text-sm">{{ img.title or img.category }}</p>
+            <p class="text-gold text-xs">{{ img.category }}</p>
+          </div>
+        </div>
+        <!-- Featured badge top -->
+        {% if img.featured %}
+        <div class="absolute top-3 left-3">
+          <span class="text-xs bg-gold text-kgreen font-bold px-2 py-1 rounded-full shadow-md">
+            <i class="fa-solid fa-star text-xs mr-1"></i>Featured
+          </span>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/90 p-4"
+         onclick="closeLightbox(event)">
+      <div class="relative max-w-4xl w-full">
+        <button onclick="closeLightbox()" class="absolute -top-12 right-0 text-white/70 hover:text-white text-sm flex items-center gap-2">
+          <i class="fa-solid fa-xmark text-xl"></i> Close
+        </button>
+        <img id="lightbox-img" src="" alt=""
+             class="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl"/>
+        <div class="mt-3 text-center">
+          <p id="lightbox-title" class="text-white font-semibold text-lg"></p>
+          <p id="lightbox-category" class="text-gold text-sm"></p>
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="text-center py-20">
+      <div class="w-20 h-20 rounded-full bg-kgreen/5 flex items-center justify-center mx-auto mb-4">
+        <i class="fa-solid fa-images text-4xl text-kgreen/20"></i>
+      </div>
+      <p class="text-gray-400">Gallery coming soon — check back shortly.</p>
+      {% if current_user.is_authenticated and current_user.is_admin() %}
+      <a href="{{ url_for('admin.gallery') }}" class="btn-gold px-6 py-3 rounded-xl inline-block mt-4 text-sm shadow-lg">
+        <i class="fa-solid fa-upload mr-2"></i> Upload First Image
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="py-20 px-4 max-w-5xl mx-auto">
+  <div class="text-center mb-12">
+    <p class="text-gold font-semibold text-sm tracking-widest uppercase mb-2">Simple Process</p>
+    <h2 class="section-title text-4xl font-bold">How It Works</h2>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
+    {% set steps = [
+      ('fa-user-plus','Register','Create your account in seconds'),
+      ('fa-ruler','Measurements','Save your body measurements digitally'),
+      ('fa-clipboard-list','Place Order','Choose your style and submit your order'),
+      ('fa-truck','Delivery','We deliver or you pick up when ready'),
+    ] %}
+    {% for icon, title, desc in steps %}
+    <div class="card p-6 text-center relative">
+      <div class="w-14 h-14 rounded-full bg-gradient-to-br from-kgreen to-kgreen-light flex items-center justify-center mx-auto mb-4 shadow-lg">
+        <i class="fa-solid {{ icon }} text-gold text-xl"></i>
+      </div>
+      <div class="absolute -top-3 -right-3 w-7 h-7 bg-gold rounded-full flex items-center justify-center text-kgreen text-xs font-bold shadow">{{ loop.index }}</div>
+      <h3 class="font-semibold text-kgreen mb-2">{{ title }}</h3>
+      <p class="text-gray-500 text-sm">{{ desc }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+<!-- ABOUT -->
+<section class="py-20 px-4">
+  <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <div>
+      <p class="text-gold font-semibold text-sm tracking-widest uppercase mb-3">Our Story</p>
+      <h2 class="section-title text-4xl font-bold mb-5 leading-tight">
+        More Than Tailoring —<br/>A Fashion Legacy
+      </h2>
+      <p class="text-gray-500 leading-relaxed mb-5">
+        Kalamu Wahid Tailoring Synergy was founded with one mission: to celebrate and elevate
+        Hausa fashion through precision craftsmanship and modern service. From elegant Agbada
+        to premium Shadda fabrics, we bring culture and quality together.
+      </p>
+      <p class="text-gray-500 leading-relaxed mb-8">
+        Every stitch tells a story. Every fabric is selected with pride.
+        Every customer leaves looking their absolute best.
+      </p>
+      <div class="grid grid-cols-3 gap-4">
+        {% for value, label in [('500+','Happy Clients'),('14+','Years Experience'),('100%','Satisfaction')] %}
+        <div class="card p-4 text-center">
+          <p class="font-display text-2xl font-bold text-gold">{{ value }}</p>
+          <p class="text-gray-400 text-xs mt-1">{{ label }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      {% for icon, title, desc in [
+        ('fa-scissors','Master Tailoring','Hand-crafted with precision'),
+        ('fa-ruler','Digital Measurements','Stored securely online'),
+        ('fa-truck','Fast Delivery','Home delivery available'),
+        ('fa-star','Premium Quality','Only the finest materials'),
+      ] %}
+      <div class="card p-5">
+        <div class="w-10 h-10 rounded-xl bg-kgreen/5 flex items-center
+                    justify-center mb-3">
+          <i class="fa-solid {{ icon }} text-kgreen"></i>
+        </div>
+        <p class="font-semibold text-kgreen text-sm">{{ title }}</p>
+        <p class="text-gray-400 text-xs mt-1">{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="py-20 bg-kgreen/5 px-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-12">
+      <p class="text-gold font-semibold text-sm tracking-widest uppercase mb-2">Reviews</p>
+      <h2 class="section-title text-4xl font-bold">What Our Customers Say</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {% set testimonials = [
+        ('Alhaji Musa Garba',    'Kano',    5, 'The Agbada they made for my son\'s wedding was absolutely stunning. Everyone was asking who the tailor was. Kalamu Wahid is the best!'),
+        ('Hajiya Fatima Bello',  'Kaduna',  5, 'I ordered Shadda fabric and a custom Kaftan. The quality is outstanding and delivery was fast. I will keep coming back.'),
+        ('Mallam Ibrahim Yusuf', 'Sokoto',  5, 'They took my measurements online and the Senator suit fit perfectly. The digital system is very convenient. Highly recommended.'),
+      ] %}
+      {% for name, city, stars, review in testimonials %}
+      <div class="card p-6">
+        <div class="flex gap-1 mb-4">
+          {% for _ in range(stars) %}
+          <i class="fa-solid fa-star text-gold text-sm"></i>
+          {% endfor %}
+        </div>
+        <p class="text-gray-600 text-sm leading-relaxed mb-5 italic">"{{ review }}"</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br
+                      from-kgreen to-kgreen-light flex items-center justify-center">
+            <span class="text-gold font-bold text-sm">{{ name[0] }}</span>
+          </div>
+          <div>
+            <p class="font-semibold text-kgreen text-sm">{{ name }}</p>
+            <p class="text-gray-400 text-xs">{{ city }}, Nigeria</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="py-20 px-4">
+  <div class="max-w-3xl mx-auto bg-gradient-to-br from-kgreen to-kgreen-light rounded-3xl p-12 text-center shadow-2xl relative overflow-hidden">
+    <div class="absolute top-0 right-0 w-64 h-64 bg-gold/10 rounded-full blur-3xl"></div>
+    <i class="fa-solid fa-scissors text-5xl text-gold/30 mb-4"></i>
+    <h2 class="font-display text-3xl font-bold text-white mb-4">Ready to Look Your Best?</h2>
+    <p class="text-kcream/70 mb-8">Join hundreds of satisfied customers who trust Kalamu Wahid for their finest tailoring needs.</p>
+    <a href="{{ url_for('auth.register') }}" class="btn-gold px-8 py-4 rounded-full text-base shadow-xl inline-block">
+      <i class="fa-solid fa-arrow-right mr-2"></i> Start Your Order Today
+    </a>
+  </div>
+</section>
+
+<script>
+function filterGallery(category) {
+  const items = document.querySelectorAll('.gallery-item');
+  const tabs  = document.querySelectorAll('.gallery-tab');
+
+  tabs.forEach(t => {
+    t.classList.remove('bg-kgreen','text-gold','active-tab');
+    t.classList.add('bg-white','text-gray-500','border','border-gray-100');
+  });
+
+  const activeTab = category === 'all'
+    ? document.getElementById('tab-all')
+    : document.getElementById('tab-' + category.replace(/ /g, '-'));
+  if (activeTab) {
+    activeTab.classList.add('bg-kgreen','text-gold','active-tab');
+    activeTab.classList.remove('bg-white','text-gray-500','border','border-gray-100');
+  }
+
+  items.forEach(item => {
+    if (category === 'all' || item.dataset.category === category) {
+      item.style.display = 'block';
+      item.style.animation = 'fadeIn .4s ease';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
+function openLightbox(filename, title, category) {
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lightbox-img').src      = '/uploads/' + filename;
+  document.getElementById('lightbox-title').textContent    = title;
+  document.getElementById('lightbox-category').textContent = category;
+  lb.classList.remove('hidden');
+  lb.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox(event) {
+  if (!event || event.target === document.getElementById('lightbox') || event.currentTarget.tagName === 'BUTTON') {
+    const lb = document.getElementById('lightbox');
+    lb.classList.add('hidden');
+    lb.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+</script>
+
+<style>
+@keyframes fadeIn { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:scale(1); } }
+</style>
+
+{% endblock %}

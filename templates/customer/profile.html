@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}My Profile — Kalamu Wahid{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-12">
+  <div class="mb-8">
+    <p class="text-gold font-semibold text-sm tracking-widest uppercase">Account</p>
+    <h1 class="section-title text-3xl font-bold mt-1">My Profile</h1>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Profile summary -->
+    <div class="space-y-4">
+      <div class="card p-6 text-center">
+        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-kgreen
+                    to-kgreen-light flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <span class="text-gold font-bold text-3xl">
+            {{ current_user.full_name[0].upper() }}
+          </span>
+        </div>
+        <h3 class="font-semibold text-kgreen text-lg">{{ current_user.full_name }}</h3>
+        <p class="text-gray-400 text-sm mt-1">{{ current_user.email }}</p>
+        <p class="text-gray-400 text-sm">{{ current_user.phone }}</p>
+        <div class="mt-4 grid grid-cols-2 gap-2">
+          <div class="bg-kcream rounded-xl p-3">
+            <p class="font-bold text-kgreen text-xl">{{ orders|length }}</p>
+            <p class="text-gray-400 text-xs">Orders</p>
+          </div>
+          <div class="bg-kcream rounded-xl p-3">
+            <p class="font-bold text-emerald-600 text-lg">
+              ₦{{ '{:,.0f}'.format(total_spent) }}
+            </p>
+            <p class="text-gray-400 text-xs">Total Spent</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick links -->
+      <div class="card p-5">
+        <h3 class="font-semibold text-kgreen mb-3 text-sm">Quick Links</h3>
+        <div class="space-y-2">
+          {% for label, url, icon in [
+            ('My Orders',      url_for('order.my_orders'),                    'fa-list'),
+            ('Measurements',   url_for('measurement.view_measurements'),      'fa-ruler'),
+            ('Place Order',    url_for('order.place_order'),                  'fa-scissors'),
+            ('Shop',           url_for('shop.shop_home'),                     'fa-store'),
+          ] %}
+          <a href="{{ url }}"
+             class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gold/5
+                    border border-transparent hover:border-gold/20 transition-all group">
+            <i class="fa-solid {{ icon }} text-kgreen group-hover:text-gold
+                      transition-colors text-sm w-4"></i>
+            <span class="text-sm text-gray-600 font-medium">{{ label }}</span>
+            <i class="fa-solid fa-chevron-right text-gray-300 text-xs ml-auto"></i>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit forms -->
+    <div class="lg:col-span-2 space-y-5">
+
+      <!-- Update info -->
+      <div class="card p-6">
+        <h3 class="font-semibold text-kgreen text-lg mb-5 flex items-center gap-2">
+          <i class="fa-solid fa-user-pen text-gold"></i> Personal Information
+        </h3>
+        <form method="POST" class="space-y-4">
+          <input type="hidden" name="action" value="update_info"/>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-kgreen mb-1">Full Name</label>
+              <div class="relative">
+                <i class="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2
+                          text-gray-400 text-sm"></i>
+                <input type="text" name="full_name"
+                       value="{{ current_user.full_name }}"
+                       required class="input-field pl-9"/>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-kgreen mb-1">Phone Number</label>
+              <div class="relative">
+                <i class="fa-solid fa-phone absolute left-3 top-1/2 -translate-y-1/2
+                          text-gray-400 text-sm"></i>
+                <input type="tel" name="phone"
+                       value="{{ current_user.phone }}"
+                       required class="input-field pl-9"/>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-kgreen mb-1">Email Address</label>
+            <div class="relative">
+              <i class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2
+                        text-gray-400 text-sm"></i>
+              <input type="email" value="{{ current_user.email }}"
+                     disabled class="input-field pl-9 opacity-50 cursor-not-allowed"/>
+            </div>
+            <p class="text-gray-400 text-xs mt-1">Email cannot be changed.</p>
+          </div>
+          <button type="submit" class="btn-gold px-6 py-2.5 rounded-xl text-sm shadow-md">
+            <i class="fa-solid fa-floppy-disk mr-2"></i> Save Changes
+          </button>
+        </form>
+      </div>
+
+      <!-- Change password -->
+      <div class="card p-6">
+        <h3 class="font-semibold text-kgreen text-lg mb-5 flex items-center gap-2">
+          <i class="fa-solid fa-lock text-gold"></i> Change Password
+        </h3>
+        <form method="POST" class="space-y-4">
+          <input type="hidden" name="action" value="change_password"/>
+          <div>
+            <label class="block text-sm font-medium text-kgreen mb-1">
+              Current Password
+            </label>
+            <div class="relative">
+              <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2
+                        text-gray-400 text-sm"></i>
+              <input type="password" name="old_password" required
+                     placeholder="••••••••" class="input-field pl-9"/>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-kgreen mb-1">
+                New Password
+              </label>
+              <div class="relative">
+                <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2
+                          text-gray-400 text-sm"></i>
+                <input type="password" name="new_password" required
+                       placeholder="Min 6 characters" class="input-field pl-9"/>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-kgreen mb-1">
+                Confirm New Password
+              </label>
+              <div class="relative">
+                <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2
+                          text-gray-400 text-sm"></i>
+                <input type="password" name="confirm_password" required
+                       placeholder="••••••••" class="input-field pl-9"/>
+              </div>
+            </div>
+          </div>
+          <button type="submit" class="btn-green px-6 py-2.5 rounded-xl text-sm shadow-md">
+            <i class="fa-solid fa-key mr-2"></i> Change Password
+          </button>
+        </form>
+      </div>
+
+      <!-- Measurement summary -->
+      <div class="card p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-semibold text-kgreen text-lg flex items-center gap-2">
+            <i class="fa-solid fa-ruler text-gold"></i> My Measurements
+          </h3>
+          <a href="{{ url_for('measurement.view_measurements') }}"
+             class="text-gold text-xs font-medium hover:underline">
+            Edit
+          </a>
+        </div>
+        {% if measurement %}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {% for label, val in [
+            ('Chest',          measurement.chest),
+            ('Shoulder',       measurement.shoulder),
+            ('Sleeve',         measurement.sleeve),
+            ('Waist',          measurement.waist),
+            ('Neck',           measurement.neck),
+            ('Hip',            measurement.hip),
+            ('Shirt Length',   measurement.shirt_length),
+            ('Trouser Length', measurement.trouser_length),
+          ] %}
+          <div class="bg-kcream rounded-xl p-3 text-center">
+            <p class="text-gray-400 text-xs">{{ label }}</p>
+            <p class="font-bold text-kgreen text-lg">{{ val or '—' }}"</p>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-6">
+          <i class="fa-solid fa-ruler text-3xl text-gray-200 mb-3"></i>
+          <p class="text-gray-400 text-sm mb-3">No measurements saved yet.</p>
+          <a href="{{ url_for('measurement.view_measurements') }}"
+             class="btn-gold px-5 py-2 rounded-xl text-sm inline-block">
+            Add Measurements
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

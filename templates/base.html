@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Kalamu Wahid Tailoring Synergy{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold:    { DEFAULT:'#C9A84C', light:'#F0D080', dark:'#9A7B2F' },
+            kgreen:  { DEFAULT:'#1B4332', light:'#2D6A4F', dark:'#0D2B1E' },
+            kcream:  { DEFAULT:'#FDF8EF', light:'#FFFDF9', dark:'#F0E8D5' },
+          },
+          fontFamily: {
+            display: ['Playfair Display','serif'],
+            body:    ['Inter','sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family:'Inter',sans-serif; background:#FDF8EF; }
+    .glass { background:rgba(255,255,255,0.7); backdrop-filter:blur(12px); }
+    .btn-gold { background:linear-gradient(135deg,#C9A84C,#F0D080); color:#1B4332; font-weight:600; transition:all .3s; }
+    .btn-gold:hover { background:linear-gradient(135deg,#9A7B2F,#C9A84C); transform:translateY(-1px); box-shadow:0 8px 25px rgba(201,168,76,0.4); }
+    .btn-green { background:linear-gradient(135deg,#1B4332,#2D6A4F); color:#F0D080; font-weight:600; transition:all .3s; }
+    .btn-green:hover { background:linear-gradient(135deg,#0D2B1E,#1B4332); transform:translateY(-1px); box-shadow:0 8px 25px rgba(27,67,50,0.4); }
+    .card { background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(27,67,50,0.08); transition:all .3s; }
+    .card:hover { box-shadow:0 8px 40px rgba(27,67,50,0.14); transform:translateY(-2px); }
+    .nav-link { position:relative; transition:color .3s; }
+    .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:#C9A84C; transition:width .3s; }
+    .nav-link:hover::after { width:100%; }
+    .badge-pending   { background:#FEF3C7; color:#92400E; }
+    .badge-progress  { background:#DBEAFE; color:#1E40AF; }
+    .badge-ready     { background:#D1FAE5; color:#065F46; }
+    .badge-delivered { background:#E5E7EB; color:#374151; }
+    .input-field { width:100%; padding:0.65rem 1rem; border:1.5px solid #E5E7EB; border-radius:10px; font-size:0.95rem; transition:all .3s; background:#FAFAFA; }
+    .input-field:focus { outline:none; border-color:#C9A84C; background:#fff; box-shadow:0 0 0 3px rgba(201,168,76,0.15); }
+    .section-title { font-family:'Playfair Display',serif; color:#1B4332; }
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:#FDF8EF; }
+    ::-webkit-scrollbar-thumb { background:#C9A84C; border-radius:10px; }
+    .pattern-bg { background-image: repeating-linear-gradient(45deg,rgba(201,168,76,0.04) 0,rgba(201,168,76,0.04) 1px,transparent 0,transparent 50%); background-size:20px 20px; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="pattern-bg min-h-screen">
+
+<!-- NAVBAR -->
+<nav class="glass sticky top-0 z-50 border-b border-gold/20 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+
+      <!-- Logo -->
+      <a href="{{ url_for('customer.home') }}" class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-kgreen to-kgreen-light flex items-center justify-center shadow-md">
+          <i class="fa-solid fa-scissors text-gold text-sm"></i>
+        </div>
+        <div class="leading-tight">
+          <p class="font-display font-bold text-kgreen text-sm">Kalamu Wahid</p>
+          <p class="text-xs text-gold-dark font-medium tracking-wide">Tailoring Synergy</p>
+        </div>
+      </a>
+
+      <!-- Desktop Nav -->
+      <div class="hidden md:flex items-center gap-7 text-sm font-medium text-kgreen">
+        <a href="{{ url_for('customer.home') }}" class="nav-link">Home</a>
+        <a href="#gallery" class="nav-link">Gallery</a>
+        <a href="#services" class="nav-link">Services</a>
+        <a href="{{ url_for('shop.shop_home') }}" class="nav-link">Shop</a>
+        <a href="#contact" class="nav-link">Contact</a>
+        {% if current_user.is_authenticated %}
+          {% if current_user.is_admin() %}
+            <a href="{{ url_for('admin.dashboard') }}" class="nav-link text-gold-dark">Admin Panel</a>
+          {% else %}
+            <a href="{{ url_for('customer.dashboard') }}" class="nav-link">Dashboard</a>
+          {% endif %}
+          <a href="{{ url_for('auth.logout') }}" class="btn-gold px-4 py-2 rounded-full text-sm">Logout</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
+          <a href="{{ url_for('auth.register') }}" class="btn-gold px-5 py-2 rounded-full text-sm">Get Started</a>
+        {% endif %}
+      </div>
+
+      <!-- Mobile menu button -->
+      <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden text-kgreen">
+        <i class="fa-solid fa-bars text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-2 text-sm font-medium text-kgreen">
+      <a href="{{ url_for('customer.home') }}" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Home</a>
+      <a href="#gallery" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Gallery</a>
+      <a href="#services" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Services</a>
+      <a href="#contact" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Contact</a>
+      {% if current_user.is_authenticated %}
+       <a href="{{ url_for('customer.dashboard') }}" class="nav-link">Dashboard</a>
+<a href="{{ url_for('customer.profile') }}" class="nav-link">Profile</a>
+        <a href="{{ url_for('auth.logout') }}" class="block py-2 px-3 rounded-lg bg-gold/20">Logout</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Login</a>
+        <a href="{{ url_for('auth.register') }}" class="block py-2 px-3 rounded-lg bg-gold/20">Get Started</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<!-- FLASH MESSAGES -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 pt-4 space-y-2">
+      {% for category, message in messages %}
+        <div class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+          {% if category == 'success' %}bg-green-50 text-green-800 border border-green-200
+          {% elif category == 'danger' %}bg-red-50 text-red-800 border border-red-200
+          {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+          <i class="fa-solid {% if category == 'success' %}fa-circle-check{% elif category == 'danger' %}fa-circle-xmark{% else %}fa-circle-info{% endif %}"></i>
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- PAGE CONTENT -->
+<main>{% block content %}{% endblock %}</main>
+
+<!-- WHATSAPP FLOATING BUTTON -->
+<a href="https://wa.me/2347082815719?text=Hello%20Kalamu%20Wahid%20Tailoring,%20I%20want%20to%20place%20an%20order"
+   target="_blank"
+   class="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-110"
+   title="Chat on WhatsApp">
+  <i class="fa-brands fa-whatsapp text-white text-2xl"></i>
+</a>
+
+<!-- FOOTER -->
+<footer class="bg-kgreen text-kcream mt-16">
+  <div class="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
+          <i class="fa-solid fa-scissors text-gold"></i>
+        </div>
+        <div>
+          <p class="font-display font-bold text-gold">Kalamu Wahid</p>
+          <p class="text-xs text-gold/70">Tailoring Synergy</p>
+        </div>
+      </div>
+      <p class="text-sm text-kcream/70 leading-relaxed">Premium Hausa tailoring crafted with passion, precision and cultural pride.</p>
+    </div>
+    <div>
+      <p class="font-semibold text-gold mb-3">Quick Links</p>
+      <ul class="space-y-2 text-sm text-kcream/70">
+        <li><a href="#" class="hover:text-gold transition-colors">Home</a></li>
+        <li><a href="#gallery" class="hover:text-gold transition-colors">Gallery</a></li>
+        <li><a href="{{ url_for('order.place_order') }}" class="hover:text-gold transition-colors">Place Order</a></li>
+        <li><a href="#contact" class="hover:text-gold transition-colors">Contact</a></li>
+      </ul>
+    </div>
+    <div id="contact">
+      <p class="font-semibold text-gold mb-3">Contact Us</p>
+      <ul class="space-y-2 text-sm text-kcream/70">
+        <li class="flex items-center gap-2"><i class="fa-solid fa-phone text-gold text-xs"></i> +234 8039239174, 07082815719 </li>
+        <li class="flex items-center gap-2"><i class="fa-brands fa-whatsapp text-gold text-xs"></i> WhatsApp Available</li>
+        <li class="flex items-center gap-2"><i class="fa-solid fa-location-dot text-gold text-xs"></i> HAdejia, Jigawa, Nigeria</li>
+        <li class="flex items-center gap-2"><i class="fa-solid fa-envelope text-gold text-xs"></i> info@kalamuwahid.com</li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-gold/20 text-center py-4 text-xs text-kcream/40">
+    &copy; 2026 Kalamu Wahid Tailoring Synergy. All rights reserved.
+  </div>
+</footer>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

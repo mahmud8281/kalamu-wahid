@@ -1,0 +1,79 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Payments — Kalamu Wahid Admin{% endblock %}
+{% block page_title %}Payment Tracking{% endblock %}
+{% block page_subtitle %}Monitor all payments and outstanding balances{% endblock %}
+
+{% block content %}
+<!-- Summary cards -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  {% for label, value, icon, grad in [
+    ('Total Revenue',  '₦'~'{:,.0f}'.format(total_revenue), 'fa-naira-sign',       'from-kgreen to-kgreen-light'),
+    ('Total Collected','₦'~'{:,.0f}'.format(total_paid),    'fa-circle-check',     'from-emerald-600 to-emerald-500'),
+    ('Outstanding',    '₦'~'{:,.0f}'.format(total_balance), 'fa-clock-rotate-left','from-amber-500 to-amber-400'),
+  ] %}
+  <div class="card p-5 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-xl bg-gradient-to-br {{ grad }} flex items-center justify-center flex-shrink-0">
+      <i class="fa-solid {{ icon }} text-white"></i>
+    </div>
+    <div>
+      <p class="text-gray-400 text-xs uppercase tracking-wide">{{ label }}</p>
+      <p class="font-display text-2xl font-bold text-gray-800">{{ value }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Payment table -->
+<div class="card overflow-hidden">
+  <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+    <h3 class="font-semibold text-gray-800">All Payment Records</h3>
+    <span class="text-xs text-gray-400">{{ orders|length }} orders total</span>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr class="text-left text-gray-400 text-xs uppercase tracking-wide">
+          <th class="px-5 py-3">#</th>
+          <th class="px-5 py-3">Customer</th>
+          <th class="px-5 py-3">Style</th>
+          <th class="px-5 py-3">Total</th>
+          <th class="px-5 py-3">Paid</th>
+          <th class="px-5 py-3">Balance</th>
+          <th class="px-5 py-3">Method</th>
+          <th class="px-5 py-3">Update</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for o in orders %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-5 py-4 font-semibold text-kgreen">#{{ o.id }}</td>
+          <td class="px-5 py-4">
+            <p class="font-medium text-gray-800">{{ o.user.full_name }}</p>
+            <p class="text-gray-400 text-xs">{{ o.user.phone }}</p>
+          </td>
+          <td class="px-5 py-4 text-gray-600">{{ o.style_type }}</td>
+          <td class="px-5 py-4 font-semibold text-gray-800">₦{{ '{:,.0f}'.format(o.amount) }}</td>
+          <td class="px-5 py-4 font-semibold text-emerald-600">₦{{ '{:,.0f}'.format(o.amount_paid) }}</td>
+          <td class="px-5 py-4">
+            {% set balance = o.amount - o.amount_paid %}
+            {% if balance <= 0 %}
+              <span class="badge badge-ready">Fully Paid</span>
+            {% else %}
+              <span class="text-red-500 font-semibold">₦{{ '{:,.0f}'.format(balance) }}</span>
+            {% endif %}
+          </td>
+          <td class="px-5 py-4 text-gray-500 text-xs">{{ o.payment_method }}</td>
+          <td class="px-5 py-4">
+            <form method="POST" action="{{ url_for('admin.update_payment', order_id=o.id) }}" class="flex gap-1">
+              <input type="number" name="amount_paid" value="{{ o.amount_paid|int }}" step="100"
+                class="w-24 text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-gold"/>
+              <button type="submit" class="btn-gold text-xs px-3 py-1.5">Save</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

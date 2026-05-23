@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}Track Order #{{ order.id }} — Kalamu Wahid{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-12">
+  <a href="{{ url_for('order.my_orders') }}"
+     class="flex items-center gap-2 text-gold text-sm hover:underline mb-6">
+    <i class="fa-solid fa-arrow-left text-xs"></i> Back to My Orders
+  </a>
+
+  <div class="card p-8">
+    <div class="flex justify-between items-start mb-8">
+      <div>
+        <p class="text-gold font-semibold text-xs tracking-widest uppercase">Order Tracking</p>
+        <h1 class="section-title text-2xl font-bold mt-1">Order #{{ order.id }}</h1>
+        <p class="text-gray-400 text-sm mt-1">{{ order.style_type }}</p>
+      </div>
+      <span class="badge text-sm px-4 py-2
+        {% if order.status == 'Pending' %}badge-pending
+        {% elif order.status == 'In Progress' %}badge-progress
+        {% elif order.status == 'Ready' %}badge-ready
+        {% else %}badge-delivered{% endif %}">
+        {{ order.status }}
+      </span>
+    </div>
+
+    <!-- Progress tracker -->
+    <div class="relative mb-10">
+      <!-- Line -->
+      <div class="absolute top-5 left-5 right-5 h-0.5 bg-gray-100 z-0"></div>
+      <div class="absolute top-5 left-5 h-0.5 bg-gradient-to-r from-kgreen
+                  to-gold z-0 transition-all duration-700"
+           style="width: calc({{ (current_step / (steps|length - 1)) * 100 }}% - 20px)">
+      </div>
+
+      <!-- Steps -->
+      <div class="relative z-10 flex justify-between">
+        {% for step in steps %}
+        {% set idx = loop.index0 %}
+        {% set done = idx <= current_step %}
+        {% set active = idx == current_step %}
+        <div class="flex flex-col items-center gap-2">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center
+                      border-2 transition-all duration-500 shadow-sm
+                      {% if done %}bg-kgreen border-kgreen{% else %}bg-white border-gray-200{% endif %}">
+            {% if done %}
+              {% if active %}
+                <i class="fa-solid fa-spinner fa-spin text-gold text-sm"></i>
+              {% else %}
+                <i class="fa-solid fa-check text-white text-sm"></i>
+              {% endif %}
+            {% else %}
+              <span class="text-gray-300 text-xs font-bold">{{ idx + 1 }}</span>
+            {% endif %}
+          </div>
+          <p class="text-xs font-medium text-center w-16
+                    {% if done %}text-kgreen{% else %}text-gray-300{% endif %}">
+            {{ step }}
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Status message -->
+    <div class="rounded-2xl p-5 mb-8 text-center
+      {% if order.status == 'Pending' %}bg-amber-50 border border-amber-200
+      {% elif order.status == 'In Progress' %}bg-blue-50 border border-blue-200
+      {% elif order.status == 'Ready' %}bg-green-50 border border-green-200
+      {% else %}bg-gray-50 border border-gray-200{% endif %}">
+      {% if order.status == 'Pending' %}
+        <i class="fa-solid fa-hourglass-half text-2xl text-amber-500 mb-2"></i>
+        <p class="font-semibold text-amber-700">Order Received</p>
+        <p class="text-amber-600 text-sm mt-1">We have received your order and will begin shortly.</p>
+      {% elif order.status == 'In Progress' %}
+        <i class="fa-solid fa-gears text-2xl text-blue-500 mb-2"></i>
+        <p class="font-semibold text-blue-700">Currently Being Sewn</p>
+        <p class="text-blue-600 text-sm mt-1">Our tailor is working on your outfit right now.</p>
+      {% elif order.status == 'Ready' %}
+        <i class="fa-solid fa-box-open text-2xl text-green-500 mb-2"></i>
+        <p class="font-semibold text-green-700">Ready for Collection!</p>
+        <p class="text-green-600 text-sm mt-1">Your outfit is ready. Please come pick it up or await delivery.</p>
+      {% else %}
+        <i class="fa-solid fa-truck text-2xl text-gray-500 mb-2"></i>
+        <p class="font-semibold text-gray-700">Delivered</p>
+        <p class="text-gray-500 text-sm mt-1">Order complete. Thank you for choosing Kalamu Wahid!</p>
+      {% endif %}
+    </div>
+
+    <!-- Order details -->
+    <div class="grid grid-cols-2 gap-3 mb-8">
+      {% for label, value in [
+        ('Style', order.style_type),
+        ('Delivery', order.delivery_method),
+        ('Payment', order.payment_method),
+        ('Amount', '₦{:,.0f}'.format(order.amount)),
+        ('Amount Paid', '₦{:,.0f}'.format(order.amount_paid)),
+        ('Balance', '₦{:,.0f}'.format(order.amount - order.amount_paid)),
+      ] %}
+      <div class="bg-kcream rounded-xl p-3">
+        <p class="text-gray-400 text-xs">{{ label }}</p>
+        <p class="font-semibold text-kgreen text-sm mt-0.5">{{ value }}</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- WhatsApp contact -->
+    <a href="https://wa.me/2347082815719?text=Hello, I want to enquire about Order %23{{ order.id }}"
+       target="_blank"
+       class="flex items-center justify-center gap-3 w-full py-3 rounded-xl
+              bg-green-500 hover:bg-green-600 text-white font-semibold
+              transition-all shadow-md">
+      <i class="fa-brands fa-whatsapp text-xl"></i>
+      Contact Us About This Order
+    </a>
+  </div>
+</div>
+{% endblock %}

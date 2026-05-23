@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}My Orders — Kalamu Wahid{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-10">
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <p class="text-gold font-semibold text-sm tracking-widest uppercase">
+        Order History
+      </p>
+      <h1 class="section-title text-3xl font-bold mt-1">My Orders</h1>
+    </div>
+    <a href="{{ url_for('order.place_order') }}"
+       class="btn-gold px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm">
+      <i class="fa-solid fa-plus"></i> New Order
+    </a>
+  </div>
+
+  {% if orders %}
+  <div class="space-y-4">
+    {% for o in orders %}
+    <div class="card p-5 flex flex-col sm:flex-row justify-between gap-4">
+      <div class="flex items-start gap-4">
+        <div class="w-12 h-12 rounded-xl bg-kgreen/5 flex items-center
+                    justify-center flex-shrink-0">
+          <i class="fa-solid fa-scissors text-kgreen"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <p class="font-semibold text-kgreen">Order #{{ o.id }}</p>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold
+              {% if o.status == 'Pending' %}badge-pending
+              {% elif o.status == 'In Progress' %}badge-progress
+              {% elif o.status == 'Ready' %}badge-ready
+              {% else %}badge-delivered{% endif %}">
+              {{ o.status }}
+            </span>
+          </div>
+          <p class="text-gray-500 text-sm mt-1">{{ o.style_type }}</p>
+          {% if o.description %}
+          <p class="text-gray-400 text-xs mt-1">
+            {{ o.description[:80] }}
+            {% if o.description|length > 80 %}...{% endif %}
+          </p>
+          {% endif %}
+          <p class="text-gray-400 text-xs mt-2">
+            <i class="fa-solid fa-calendar text-xs mr-1"></i>
+            {{ o.created_at.strftime('%d %b %Y') }}
+          </p>
+          <div class="flex items-center gap-3 mt-2">
+            <a href="{{ url_for('order.track_order', order_id=o.id) }}"
+               class="inline-flex items-center gap-1 text-xs text-gold hover:underline">
+              <i class="fa-solid fa-location-dot text-xs"></i> Track Order
+            </a>
+            <a href="{{ url_for('print_bp.invoice_order', order_id=o.id) }}"
+               target="_blank"
+               class="inline-flex items-center gap-1 text-xs text-kgreen hover:underline">
+              <i class="fa-solid fa-file-invoice text-xs"></i> Invoice
+            </a>
+          </div>
+        </div>
+      </div>
+      <div class="text-right flex-shrink-0">
+        <p class="font-bold text-kgreen text-lg">
+          ₦{{ '{:,.0f}'.format(o.amount) }}
+        </p>
+        <p class="text-xs text-gray-400 mt-1">
+          Paid: ₦{{ '{:,.0f}'.format(o.amount_paid) }}
+        </p>
+        {% if o.amount > o.amount_paid %}
+        <p class="text-xs text-red-500 font-medium mt-1">
+          Balance: ₦{{ '{:,.0f}'.format(o.amount - o.amount_paid) }}
+        </p>
+        {% else %}
+        <p class="text-xs text-emerald-500 font-medium mt-1">Fully Paid</p>
+        {% endif %}
+        <p class="text-xs text-gray-400 mt-1">
+          <i class="fa-solid fa-truck mr-1"></i>{{ o.delivery_method }}
+        </p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card p-16 text-center">
+    <i class="fa-solid fa-clipboard text-5xl text-gray-200 mb-4"></i>
+    <h3 class="text-kgreen font-semibold text-lg mb-2">No orders yet</h3>
+    <p class="text-gray-400 text-sm mb-6">
+      Place your first order and we'll get started right away.
+    </p>
+    <a href="{{ url_for('order.place_order') }}"
+       class="btn-gold px-8 py-3 rounded-xl inline-block shadow-lg">
+      Place First Order
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

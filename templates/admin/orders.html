@@ -1,0 +1,97 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Orders — Kalamu Wahid Admin{% endblock %}
+{% block page_title %}Order Management{% endblock %}
+{% block page_subtitle %}View and update all customer orders{% endblock %}
+
+{% block content %}
+<!-- Filter tabs -->
+<div class="flex gap-2 mb-6 flex-wrap">
+  {% for s in ['all','Pending','In Progress','Ready','Delivered'] %}
+  <a href="{{ url_for('admin.orders', status=s) }}"
+     class="px-4 py-2 rounded-xl text-sm font-medium transition-all
+     {% if current_status == s %}bg-kgreen text-gold{% else %}bg-white text-gray-500 hover:bg-gray-50{% endif %}">
+    {{ s.title() }}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="card overflow-hidden">
+  {% if orders %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-100">
+        <tr class="text-left text-gray-400 text-xs uppercase tracking-wide">
+          <th class="px-5 py-4">#</th>
+          <th class="px-5 py-4">Customer</th>
+          <th class="px-5 py-4">Style</th>
+          <th class="px-5 py-4">Delivery</th>
+          <th class="px-5 py-4">Amount</th>
+          <th class="px-5 py-4">Paid</th>
+          <th class="px-5 py-4">Status</th>
+          <th class="px-5 py-4">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        {% for o in orders %}
+        <tr class="hover:bg-gray-50 transition-colors">
+          <td class="px-5 py-4 font-semibold text-kgreen">#{{ o.id }}</td>
+          <td class="px-5 py-4">
+            <a href="{{ url_for('admin.customer_detail', user_id=o.user_id) }}" class="hover:text-gold transition-colors">
+              <p class="font-medium text-gray-800">{{ o.user.full_name }}</p>
+              <p class="text-gray-400 text-xs">{{ o.user.phone }}</p>
+            </a>
+          </td>
+          <td class="px-5 py-4">
+            <p class="text-gray-800">{{ o.style_type }}</p>
+            {% if o.notes %}<p class="text-gray-400 text-xs mt-0.5 max-w-xs truncate">{{ o.notes }}</p>{% endif %}
+          </td>
+          <td class="px-5 py-4 text-gray-500 text-xs">{{ o.delivery_method }}</td>
+          <td class="px-5 py-4 font-semibold text-gray-800">₦{{ '{:,.0f}'.format(o.amount) }}</td>
+          <td class="px-5 py-4">
+            <p class="font-medium text-emerald-600">₦{{ '{:,.0f}'.format(o.amount_paid) }}</p>
+            {% if o.amount > o.amount_paid %}
+            <p class="text-red-400 text-xs">₦{{ '{:,.0f}'.format(o.amount - o.amount_paid) }} due</p>
+            {% else %}
+            <p class="text-emerald-500 text-xs">Fully paid</p>
+            {% endif %}
+          </td>
+          <td class="px-5 py-4">
+            <form method="POST" action="{{ url_for('admin.update_status', order_id=o.id) }}">
+              <select name="status" onchange="this.form.submit()"
+                class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-gold cursor-pointer">
+                {% for s in ['Pending','In Progress','Ready','Delivered'] %}
+                <option {% if o.status == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+              </select>
+            </form>
+          </td>
+          <td class="px-5 py-4">
+            <div class="flex items-center gap-2">
+              <form method="POST" action="{{ url_for('admin.update_payment', order_id=o.id) }}" class="flex gap-1">
+                <input type="number" name="amount_paid" value="{{ o.amount_paid|int }}" step="100"
+                  class="w-20 text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:border-gold"/>
+                <button type="submit" class="btn-gold text-xs px-2 py-1.5">Save</button>
+              </form>
+              {% if current_user.is_ceo() %}
+              <form method="POST" action="{{ url_for('admin.delete_order', order_id=o.id) }}"
+                    onsubmit="return confirm('Delete Order #{{ o.id }}?')">
+                <button type="submit" class="text-red-400 hover:text-red-600 transition-colors">
+                  <i class="fa-solid fa-trash text-xs"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-20">
+    <i class="fa-solid fa-clipboard text-5xl text-gray-200 mb-4"></i>
+    <p class="text-gray-400">No orders found</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

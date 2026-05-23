@@ -1,0 +1,326 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Products — Kalamu Wahid Admin{% endblock %}
+{% block page_title %}Product Management{% endblock %}
+{% block page_subtitle %}Bulk upload products — multiple images share the same name, category and price{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- Add product form -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-gray-800 mb-1">Add Products</h3>
+    <p class="text-gray-400 text-xs mb-5">Upload multiple images at once — they all share the same name, price and category.</p>
+
+    <form method="POST" action="{{ url_for('admin_shop.add_product') }}"
+          enctype="multipart/form-data" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Product Name</label>
+        <input type="text" name="name" required placeholder="e.g. White Shadda" class="input-field"/>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Category</label>
+        <select name="category" class="input-field">
+          {% for c in categories %}
+          <option>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Price (₦)</label>
+          <input type="number" name="price" step="0.01"
+                 placeholder="0 = on request" class="input-field"/>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Unit</label>
+          <select name="unit" class="input-field">
+            {% for u in ['yard','roll','piece','meter','pack','set'] %}
+            <option>{{ u }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Description</label>
+        <textarea name="description" rows="2"
+                  placeholder="Colour, material, quality..."
+                  class="input-field resize-none"></textarea>
+      </div>
+
+      <!-- Multi-image drop zone -->
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">
+          Images <span class="text-gray-300">(select as many as you want)</span>
+        </label>
+        <div id="drop-zone"
+             class="border-2 border-dashed border-gray-200 hover:border-gold/60
+                    rounded-xl p-5 text-center transition-all cursor-pointer
+                    bg-gray-50 hover:bg-gold/5"
+             onclick="document.getElementById('product-images').click()"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)"
+             ondrop="handleDrop(event)">
+          <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-300 mb-2"></i>
+          <p class="text-gray-500 text-sm font-medium">Click or drag & drop images here</p>
+          <p class="text-gray-400 text-xs mt-1">PNG, JPG, WEBP — multiple files OK</p>
+          <input type="file" id="product-images" name="images"
+                 accept="image/*" multiple required class="hidden"
+                 onchange="showPreviews(this.files)"/>
+        </div>
+
+        <!-- Previews -->
+        <div id="preview-grid"
+             class="grid grid-cols-4 gap-2 mt-3 hidden"></div>
+        <p id="file-count" class="text-xs text-gray-400 mt-2 hidden"></p>
+      </div>
+
+      <div class="flex gap-4">
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input type="checkbox" name="in_stock" checked class="accent-kgreen rounded"/>
+          In Stock
+        </label>
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input type="checkbox" name="featured" class="accent-amber-500 rounded"/>
+          Feature first
+        </label>
+      </div>
+
+      <button type="submit" id="upload-btn"
+              class="btn-gold w-full py-2.5 text-sm hidden">
+        <i class="fa-solid fa-upload mr-2"></i>
+        <span id="upload-label">Upload Products</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Products list -->
+  <div class="lg:col-span-2 space-y-3">
+    <div class="flex justify-between items-center mb-2">
+      <h3 class="font-semibold text-gray-800">
+        All Products
+        <span class="text-gray-400 font-normal text-sm">({{ products|length }})</span>
+      </h3>
+      <a href="{{ url_for('admin_shop.product_orders') }}"
+         class="btn-green px-4 py-2 text-sm">
+        <i class="fa-solid fa-list-check mr-1"></i> View Orders
+      </a>
+    </div>
+
+    {% for p in products %}
+    <div class="card p-4 flex items-center gap-4">
+      <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0">
+        {% if p.image %}
+        <img src="/uploads/{{ p.image }}" alt="{{ p.name }}"
+             class="w-full h-full object-cover"/>
+        {% else %}
+        <div class="w-full h-full flex items-center justify-center">
+          <i class="fa-solid fa-shirt text-2xl text-gray-300"></i>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <p class="font-semibold text-gray-800 truncate">{{ p.name }}</p>
+          {% if p.featured %}
+          <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Featured</span>
+          {% endif %}
+          {% if p.in_stock %}
+          <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">In Stock</span>
+          {% else %}
+          <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">Out of Stock</span>
+          {% endif %}
+        </div>
+        <p class="text-gray-400 text-xs mt-0.5">{{ p.category }}</p>
+        <p class="text-kgreen font-semibold text-sm mt-1">
+          {% if p.price %}
+            ₦{{ '{:,.0f}'.format(p.price) }} / {{ p.unit }}
+          {% else %}
+            <span class="text-gold">Price on request</span>
+          {% endif %}
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <form method="POST"
+              action="{{ url_for('admin_shop.toggle_stock', product_id=p.id) }}">
+          <button type="submit"
+            class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors
+            {{ 'bg-green-100 text-green-600 hover:bg-green-200' if p.in_stock
+               else 'bg-red-100 text-red-500 hover:bg-red-200' }}">
+            <i class="fa-solid {{ 'fa-toggle-on' if p.in_stock else 'fa-toggle-off' }} text-sm"></i>
+          </button>
+        </form>
+
+        <button onclick="openEdit({{ p.id }}, '{{ p.name }}',
+                  '{{ p.category }}', {{ p.price or 0 }},
+                  '{{ p.unit }}', `{{ p.description or '' }}`,
+                  {{ 'true' if p.featured else 'false' }},
+                  {{ 'true' if p.in_stock else 'false' }})"
+          class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600
+                 hover:bg-blue-100 flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-pen text-xs"></i>
+        </button>
+
+        <form method="POST"
+              action="{{ url_for('admin_shop.delete_product', product_id=p.id) }}"
+              onsubmit="return confirm('Delete {{ p.name }}?')">
+          <button type="submit"
+            class="w-8 h-8 rounded-lg bg-red-50 text-red-500
+                   hover:bg-red-100 flex items-center justify-center transition-colors">
+            <i class="fa-solid fa-trash text-xs"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="card p-16 text-center">
+      <i class="fa-solid fa-box-open text-5xl text-gray-200 mb-4"></i>
+      <p class="text-gray-400">No products yet — add your first one!</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="edit-modal"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
+    <button onclick="closeEdit()"
+            class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+      <i class="fa-solid fa-xmark text-xl"></i>
+    </button>
+    <h3 class="font-semibold text-gray-800 text-lg mb-5">Edit Product</h3>
+    <form method="POST" id="edit-form" enctype="multipart/form-data" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Product Name</label>
+        <input type="text" name="name" id="edit-name" required class="input-field"/>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Category</label>
+          <select name="category" id="edit-category" class="input-field">
+            {% for c in categories %}<option>{{ c }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Unit</label>
+          <select name="unit" id="edit-unit" class="input-field">
+            {% for u in ['yard','roll','piece','meter','pack','set'] %}
+            <option>{{ u }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Price (₦)</label>
+        <input type="number" name="price" id="edit-price"
+               step="0.01" class="input-field"/>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Description</label>
+        <textarea name="description" id="edit-desc"
+                  rows="2" class="input-field resize-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Replace Image (optional)</label>
+        <input type="file" name="image" accept="image/*" class="input-field text-sm"/>
+      </div>
+      <div class="flex gap-4">
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input type="checkbox" name="in_stock" id="edit-stock"
+                 class="accent-kgreen rounded"/> In Stock
+        </label>
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input type="checkbox" name="featured" id="edit-featured"
+                 class="accent-amber-500 rounded"/> Featured
+        </label>
+      </div>
+      <button type="submit" class="btn-gold w-full py-2.5 text-sm">
+        <i class="fa-solid fa-floppy-disk mr-2"></i> Save Changes
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function showPreviews(files) {
+  const grid  = document.getElementById('preview-grid');
+  const count = document.getElementById('file-count');
+  const btn   = document.getElementById('upload-btn');
+  const label = document.getElementById('upload-label');
+  grid.innerHTML = '';
+  if (!files.length) {
+    grid.classList.add('hidden');
+    count.classList.add('hidden');
+    btn.classList.add('hidden');
+    return;
+  }
+  grid.classList.remove('hidden');
+  count.classList.remove('hidden');
+  btn.classList.remove('hidden');
+  count.textContent = `${files.length} image${files.length > 1 ? 's' : ''} selected — each will be added as a separate product listing`;
+  label.textContent = `Upload ${files.length} Product${files.length > 1 ? 's' : ''}`;
+
+  Array.from(files).forEach((file, i) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const div = document.createElement('div');
+      div.className = 'relative aspect-square rounded-lg overflow-hidden group';
+      div.innerHTML = `
+        <img src="${e.target.result}" class="w-full h-full object-cover"/>
+        ${i === 0 ? '<span class="absolute top-1 left-1 bg-gold text-kgreen text-xs font-bold px-1.5 py-0.5 rounded-full">★</span>' : ''}
+      `;
+      grid.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  const z = document.getElementById('drop-zone');
+  z.classList.add('border-gold','bg-gold/10');
+  z.classList.remove('border-gray-200','bg-gray-50');
+}
+
+function handleDragLeave(e) {
+  const z = document.getElementById('drop-zone');
+  z.classList.remove('border-gold','bg-gold/10');
+  z.classList.add('border-gray-200','bg-gray-50');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  handleDragLeave(e);
+  const input = document.getElementById('product-images');
+  if (e.dataTransfer.files.length) {
+    input.files = e.dataTransfer.files;
+    showPreviews(e.dataTransfer.files);
+  }
+}
+
+function openEdit(id, name, cat, price, unit, desc, featured, inStock) {
+  document.getElementById('edit-form').action = `/admin/shop/edit/${id}`;
+  document.getElementById('edit-name').value    = name;
+  document.getElementById('edit-price').value   = price;
+  document.getElementById('edit-desc').value    = desc;
+  document.getElementById('edit-featured').checked = featured;
+  document.getElementById('edit-stock').checked    = inStock;
+  [...document.getElementById('edit-category').options]
+    .forEach(o => o.selected = o.value === cat);
+  [...document.getElementById('edit-unit').options]
+    .forEach(o => o.selected = o.value === unit);
+  const modal = document.getElementById('edit-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeEdit() {
+  document.getElementById('edit-modal').classList.add('hidden');
+  document.getElementById('edit-modal').classList.remove('flex');
+}
+</script>
+{% endblock %}

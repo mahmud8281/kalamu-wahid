@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}Shop — Kalamu Wahid{% endblock %}
+{% block content %}
+
+<!-- Hero -->
+<section class="bg-gradient-to-br from-kgreen-dark to-kgreen py-16 px-4 text-center">
+  <p class="text-gold font-semibold text-sm tracking-widest uppercase mb-2">Our Products</p>
+  <h1 class="font-display text-4xl md:text-5xl font-bold text-white mb-4">Textile & Fashion Shop</h1>
+  <p class="text-kcream/70 max-w-xl mx-auto text-sm">Premium Shadda, Yadi, Caps, Ready-made wear and Embroidery materials — all in one place.</p>
+
+  <!-- Search -->
+  <form method="GET" action="{{ url_for('shop.shop_home') }}" class="mt-8 max-w-md mx-auto">
+    <div class="relative">
+      <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+      <input type="text" name="search" value="{{ search }}" placeholder="Search products..."
+             class="w-full pl-11 pr-4 py-3 rounded-full border-0 shadow-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-gold/50"/>
+      {% if current_category != 'all' %}
+      <input type="hidden" name="category" value="{{ current_category }}"/>
+      {% endif %}
+    </div>
+  </form>
+</section>
+
+<div class="max-w-7xl mx-auto px-4 py-12">
+
+  <!-- Category tabs -->
+  <div class="flex gap-2 flex-wrap mb-8">
+    <a href="{{ url_for('shop.shop_home') }}"
+       class="px-5 py-2 rounded-full text-sm font-medium transition-all
+       {% if current_category == 'all' %}bg-kgreen text-gold{% else %}bg-white text-gray-500 border border-gray-200 hover:border-kgreen/30{% endif %}">
+      All Products
+    </a>
+    {% for cat in categories %}
+    <a href="{{ url_for('shop.shop_home', category=cat) }}"
+       class="px-5 py-2 rounded-full text-sm font-medium transition-all
+       {% if current_category == cat %}bg-kgreen text-gold{% else %}bg-white text-gray-500 border border-gray-200 hover:border-kgreen/30{% endif %}">
+      {{ cat }}
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if products %}
+  <!-- Results count -->
+  <p class="text-gray-400 text-sm mb-6">
+    {{ products|length }} product{{ 's' if products|length != 1 }} found
+    {% if search %} for "<span class="text-kgreen font-medium">{{ search }}</span>"{% endif %}
+    {% if current_category != 'all' %} in <span class="text-kgreen font-medium">{{ current_category }}</span>{% endif %}
+  </p>
+
+  <!-- Products grid -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+    {% for p in products %}
+    <div class="card overflow-hidden group">
+      <!-- Image -->
+      <a href="{{ url_for('shop.product_detail', product_id=p.id) }}">
+        <div class="aspect-square bg-gradient-to-br from-kgreen/5 to-gold/5 relative overflow-hidden">
+          {% if p.image %}
+          <img src="/uploads/{{ p.image }}" alt="{{ p.name }}"
+               class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center">
+            <i class="fa-solid fa-shirt text-5xl text-kgreen/20"></i>
+          </div>
+          {% endif %}
+          {% if p.featured %}
+          <span class="absolute top-2 left-2 bg-gold text-kgreen text-xs font-bold px-2 py-0.5 rounded-full">
+            <i class="fa-solid fa-star text-xs mr-1"></i>Featured
+          </span>
+          {% endif %}
+          <span class="absolute top-2 right-2 bg-white/90 text-kgreen text-xs font-semibold px-2 py-0.5 rounded-full">
+            {{ p.category }}
+          </span>
+        </div>
+      </a>
+      <!-- Info -->
+      <div class="p-4">
+        <a href="{{ url_for('shop.product_detail', product_id=p.id) }}">
+          <h3 class="font-semibold text-kgreen text-sm hover:text-gold transition-colors truncate">{{ p.name }}</h3>
+        </a>
+        {% if p.description %}
+        <p class="text-gray-400 text-xs mt-1 line-clamp-2">{{ p.description }}</p>
+        {% endif %}
+        <div class="flex items-center justify-between mt-3">
+          <div>
+            {% if p.price %}
+            <p class="font-bold text-kgreen">₦{{ '{:,.0f}'.format(p.price) }}</p>
+            <p class="text-gray-400 text-xs">per {{ p.unit }}</p>
+            {% else %}
+            <p class="text-gold font-semibold text-sm">Price on request</p>
+            {% endif %}
+          </div>
+        </div>
+        <div class="flex gap-2 mt-3">
+          <a href="{{ url_for('shop.request_order', product_id=p.id) }}"
+             class="flex-1 btn-gold py-2 rounded-xl text-xs text-center">
+            <i class="fa-solid fa-cart-plus mr-1"></i> Order
+          </a>
+          <a href="https://wa.me/2348000000000?text=Hello! I'm interested in {{ p.name | urlencode }}"
+             target="_blank"
+             class="w-9 h-9 bg-green-500 hover:bg-green-600 rounded-xl flex items-center justify-center transition-colors flex-shrink-0">
+            <i class="fa-brands fa-whatsapp text-white text-sm"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="text-center py-20">
+    <i class="fa-solid fa-box-open text-6xl text-gray-200 mb-4"></i>
+    <h3 class="text-kgreen font-semibold text-lg mb-2">No products found</h3>
+    <p class="text-gray-400 text-sm">
+      {% if search %}Try a different search term.
+      {% else %}Products will appear here once added from the admin panel.{% endif %}
+    </p>
+    {% if search %}
+    <a href="{{ url_for('shop.shop_home') }}" class="btn-gold px-6 py-3 rounded-xl inline-block mt-4 text-sm">Clear Search</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

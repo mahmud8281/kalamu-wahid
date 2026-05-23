@@ -1,0 +1,75 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Staff — Kalamu Wahid Admin{% endblock %}
+{% block page_title %}Staff Management{% endblock %}
+{% block page_subtitle %}CEO only — manage worker accounts{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- Add staff form -->
+  <div class="card p-6">
+    <h3 class="font-semibold text-gray-800 mb-5">Add Staff Account</h3>
+    <form method="POST" action="{{ url_for('admin.add_staff') }}" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Full Name</label>
+        <input type="text" name="full_name" required placeholder="Staff full name" class="input-field"/>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Email</label>
+        <input type="email" name="email" required placeholder="staff@kalamu.com" class="input-field"/>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Phone</label>
+        <input type="tel" name="phone" required placeholder="+234 800 000 0000" class="input-field"/>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Password</label>
+        <input type="password" name="password" required placeholder="Set password" class="input-field"/>
+      </div>
+      <button type="submit" class="btn-gold w-full py-2.5 text-sm">
+        <i class="fa-solid fa-user-plus mr-2"></i> Create Staff Account
+      </button>
+    </form>
+  </div>
+
+  <!-- Staff list -->
+  <div class="lg:col-span-2 card p-6">
+    <h3 class="font-semibold text-gray-800 mb-5">
+      Current Staff <span class="text-gray-400 font-normal text-sm">({{ staff|length }})</span>
+    </h3>
+    {% if staff %}
+    <div class="space-y-3">
+      {% for s in staff %}
+      <div class="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-gold/30 transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-kgreen to-kgreen-light flex items-center justify-center flex-shrink-0">
+            <span class="text-gold font-bold">{{ s.full_name[0].upper() }}</span>
+          </div>
+          <div>
+            <p class="font-medium text-gray-800">{{ s.full_name }}</p>
+            <p class="text-gray-400 text-xs">{{ s.email }}</p>
+            <p class="text-gray-400 text-xs">{{ s.phone }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-medium">Staff</span>
+          <form method="POST" action="{{ url_for('admin.delete_staff', user_id=s.id) }}"
+                onsubmit="return confirm('Remove {{ s.full_name }}?')">
+            <button type="submit" class="text-red-400 hover:text-red-600 transition-colors">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12">
+      <i class="fa-solid fa-user-tie text-5xl text-gray-200 mb-4"></i>
+      <p class="text-gray-400">No staff accounts yet</p>
+      <p class="text-gray-300 text-sm mt-1">Use the form to add your first worker</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

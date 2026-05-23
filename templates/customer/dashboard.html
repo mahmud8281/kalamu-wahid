@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}My Dashboard — Kalamu Wahid{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+    <div>
+      <p class="text-gold font-semibold text-sm tracking-widest uppercase">Customer Portal</p>
+      <h1 class="section-title text-3xl font-bold mt-1">Welcome, {{ current_user.full_name.split()[0] }}</h1>
+      <p class="text-gray-500 text-sm mt-1">Manage your orders and measurements</p>
+    </div>
+    <a href="{{ url_for('order.place_order') }}" class="btn-gold px-6 py-3 rounded-xl shadow-lg flex items-center gap-2">
+      <i class="fa-solid fa-plus"></i> New Order
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+    {% set total = orders|length %}
+    {% set pending_count = orders|selectattr('status','equalto','Pending')|list|length %}
+    {% set ready_count = orders|selectattr('status','equalto','Ready')|list|length %}
+    {% set done_count = orders|selectattr('status','equalto','Delivered')|list|length %}
+    {% for label, value, icon, color in [
+      ('Total Orders', total, 'fa-list-check', 'from-kgreen to-kgreen-light'),
+      ('Pending', pending_count, 'fa-clock', 'from-amber-500 to-amber-400'),
+      ('Ready', ready_count, 'fa-box-open', 'from-emerald-600 to-emerald-500'),
+      ('Delivered', done_count, 'fa-truck', 'from-gray-600 to-gray-500'),
+    ] %}
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-gray-500 text-xs font-medium uppercase tracking-wide">{{ label }}</p>
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-br {{ color }} flex items-center justify-center">
+          <i class="fa-solid {{ icon }} text-white text-sm"></i>
+        </div>
+      </div>
+      <p class="font-display text-3xl font-bold text-kgreen">{{ value }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Orders Table -->
+    <div class="lg:col-span-2 card p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="font-semibold text-kgreen text-lg">Recent Orders</h2>
+        <a href="{{ url_for('order.my_orders') }}" class="text-gold text-sm font-medium hover:underline">View all</a>
+      </div>
+      {% if orders %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-gray-400 text-xs uppercase tracking-wide border-b border-gray-100">
+              <th class="pb-3">Order</th>
+              <th class="pb-3">Style</th>
+              <th class="pb-3">Status</th>
+              <th class="pb-3">Amount</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            {% for o in orders[:5] %}
+            <tr class="hover:bg-kcream/50 transition-colors">
+              <td class="py-3 font-medium text-kgreen">#{{ o.id }}</td>
+              <td class="py-3 text-gray-600">{{ o.style_type }}</td>
+              <td class="py-3">
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold
+                  {% if o.status == 'Pending' %}badge-pending
+                  {% elif o.status == 'In Progress' %}badge-progress
+                  {% elif o.status == 'Ready' %}badge-ready
+                  {% else %}badge-delivered{% endif %}">
+                  {{ o.status }}
+                </span>
+              </td>
+              <td class="py-3 text-gray-600">₦{{ "%.0f"|format(o.amount) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-12">
+        <i class="fa-solid fa-clipboard text-4xl text-gray-200 mb-3"></i>
+        <p class="text-gray-400 text-sm">No orders yet</p>
+        <a href="{{ url_for('order.place_order') }}" class="btn-gold px-5 py-2 rounded-xl text-sm mt-4 inline-block">Place First Order</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="space-y-4">
+      <div class="card p-6">
+        <h2 class="font-semibold text-kgreen text-lg mb-4">Quick Actions</h2>
+        <div class="space-y-3">
+          {% for label, url, icon in [
+            ('Place New Order', url_for('order.place_order'), 'fa-scissors'),
+            ('My Measurements', url_for('measurement.view_measurements'), 'fa-ruler'),
+            ('My Orders', url_for('order.my_orders'), 'fa-list'),
+          ] %}
+          <a href="{{ url }}" class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-gold/30 hover:bg-gold/5 transition-all group">
+            <div class="w-9 h-9 rounded-lg bg-kgreen/5 group-hover:bg-kgreen flex items-center justify-center transition-colors">
+              <i class="fa-solid {{ icon }} text-kgreen group-hover:text-gold text-sm transition-colors"></i>
+            </div>
+            <span class="text-sm font-medium text-gray-700">{{ label }}</span>
+            <i class="fa-solid fa-chevron-right text-gray-300 text-xs ml-auto"></i>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Measurement summary -->
+      <div class="card p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="font-semibold text-kgreen text-lg">Measurements</h2>
+          <a href="{{ url_for('measurement.view_measurements') }}" class="text-gold text-xs font-medium hover:underline">Edit</a>
+        </div>
+        {% if measurement %}
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          {% for label, val in [
+            ('Chest', measurement.chest), ('Shoulder', measurement.shoulder),
+            ('Waist', measurement.waist), ('Hip', measurement.hip),
+          ] %}
+          <div class="bg-kcream rounded-lg p-2 text-center">
+            <p class="text-gray-400 text-xs">{{ label }}</p>
+            <p class="font-semibold text-kgreen text-sm">{{ val or '—' }}"</p>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+          <i class="fa-solid fa-ruler text-3xl text-gray-200 mb-2"></i>
+          <p class="text-gray-400 text-xs mb-3">No measurements saved</p>
+          <a href="{{ url_for('measurement.view_measurements') }}" class="btn-green px-4 py-2 rounded-xl text-xs inline-block">Add Now</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

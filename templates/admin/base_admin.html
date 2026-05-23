@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Admin — Kalamu Wahid{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold:   { DEFAULT:'#C9A84C', light:'#F0D080', dark:'#9A7B2F' },
+            kgreen: { DEFAULT:'#1B4332', light:'#2D6A4F', dark:'#0D2B1E' },
+            kcream: { DEFAULT:'#FDF8EF' },
+          },
+          fontFamily: {
+            display: ['Playfair Display','serif'],
+            body:    ['Inter','sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family:'Inter',sans-serif; background:#F1F5F9; }
+    .sidebar-link { display:flex; align-items:center; gap:10px; padding:10px 16px; border-radius:10px; font-size:.875rem; font-weight:500; color:rgba(253,248,239,0.7); transition:all .2s; }
+    .sidebar-link:hover, .sidebar-link.active { background:rgba(201,168,76,0.15); color:#F0D080; }
+    .sidebar-link i { width:18px; text-align:center; }
+    .card { background:#fff; border-radius:16px; box-shadow:0 2px 16px rgba(0,0,0,0.06); }
+    .btn-gold { background:linear-gradient(135deg,#C9A84C,#F0D080); color:#1B4332; font-weight:600; transition:all .3s; border-radius:10px; }
+    .btn-gold:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(201,168,76,0.35); }
+    .btn-green { background:linear-gradient(135deg,#1B4332,#2D6A4F); color:#F0D080; font-weight:600; transition:all .3s; border-radius:10px; }
+    .input-field { width:100%; padding:.6rem .9rem; border:1.5px solid #E2E8F0; border-radius:10px; font-size:.9rem; background:#F8FAFC; transition:all .3s; }
+    .input-field:focus { outline:none; border-color:#C9A84C; background:#fff; box-shadow:0 0 0 3px rgba(201,168,76,.12); }
+    .badge { padding:3px 10px; border-radius:999px; font-size:.72rem; font-weight:600; }
+    .badge-pending   { background:#FEF3C7; color:#92400E; }
+    .badge-progress  { background:#DBEAFE; color:#1E40AF; }
+    .badge-ready     { background:#D1FAE5; color:#065F46; }
+    .badge-delivered { background:#E5E7EB; color:#374151; }
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-thumb { background:#C9A84C; border-radius:10px; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="flex h-screen overflow-hidden">
+
+<!-- SIDEBAR -->
+<aside class="w-64 bg-gradient-to-b from-kgreen-dark to-kgreen flex flex-col flex-shrink-0 h-screen overflow-y-auto">
+  <!-- Logo -->
+  <div class="p-5 border-b border-gold/20">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
+        <i class="fa-solid fa-scissors text-gold"></i>
+      </div>
+      <div>
+        <p class="font-display font-bold text-gold text-sm">Kalamu Wahid</p>
+        <p class="text-gold/50 text-xs">Control Panel</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin info -->
+  <div class="p-4 border-b border-gold/10">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full bg-gold/20 flex items-center justify-center">
+        <span class="text-gold font-bold text-sm">{{ current_user.full_name[0].upper() }}</span>
+      </div>
+      <div>
+        <p class="text-kcream text-sm font-medium">{{ current_user.full_name }}</p>
+        <p class="text-gold/60 text-xs capitalize">{{ current_user.role }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="flex-1 p-3 space-y-1">
+    <p class="text-gold/40 text-xs uppercase tracking-widest px-3 py-2">Main</p>
+    <a href="{{ url_for('admin.dashboard') }}"
+       class="sidebar-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+      <i class="fa-solid fa-gauge-high"></i> Dashboard
+    </a>
+    <a href="{{ url_for('admin.orders') }}"
+       class="sidebar-link {% if request.endpoint in ['admin.orders','admin.update_status'] %}active{% endif %}">
+      <i class="fa-solid fa-list-check"></i> Orders
+    </a>
+    <a href="{{ url_for('admin.payments') }}"
+       class="sidebar-link {% if request.endpoint == 'admin.payments' %}active{% endif %}">
+      <i class="fa-solid fa-money-bill-wave"></i> Payments
+    </a>
+
+    <p class="text-gold/40 text-xs uppercase tracking-widest px-3 py-2 mt-3">People</p>
+    <a href="{{ url_for('admin.customers') }}"
+       class="sidebar-link {% if request.endpoint in ['admin.customers','admin.customer_detail'] %}active{% endif %}">
+      <i class="fa-solid fa-users"></i> Customers
+    </a>
+    {% if current_user.is_ceo() %}
+    <a href="{{ url_for('admin.staff') }}"
+       class="sidebar-link {% if request.endpoint == 'admin.staff' %}active{% endif %}">
+      <i class="fa-solid fa-user-tie"></i> Staff Accounts
+    </a>
+    {% endif %}
+
+    <p class="text-gold/40 text-xs uppercase tracking-widest px-3 py-2 mt-3">Content</p>
+    <a href="{{ url_for('admin.gallery') }}"
+       class="sidebar-link {% if request.endpoint == 'admin.gallery' %}active{% endif %}">
+      <i class="fa-solid fa-images"></i> Gallery
+    </a>
+    
+    <a href="{{ url_for('admin_shop.measurements') }}"
+   class="sidebar-link {% if 'measurements' in request.endpoint %}active{% endif %}">
+  <i class="fa-solid fa-ruler"></i> Measurements
+</a>
+    
+    <a href="{{ url_for('admin_shop.products') }}"
+   class="sidebar-link {% if 'admin_shop' in request.endpoint %}active{% endif %}">
+  <i class="fa-solid fa-store"></i> Products
+</a>
+<a href="{{ url_for('admin_shop.product_orders') }}"
+   class="sidebar-link {% if request.endpoint == 'admin_shop.product_orders' %}active{% endif %}">
+  <i class="fa-solid fa-bag-shopping"></i> Product Orders
+</a>
+
+    <p class="text-gold/40 text-xs uppercase tracking-widest px-3 py-2 mt-3">Account</p>
+    <a href="{{ url_for('customer.home') }}" class="sidebar-link">
+      <i class="fa-solid fa-house"></i> View Website
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="sidebar-link text-red-300 hover:text-red-200 hover:bg-red-900/20">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </a>
+  </nav>
+</aside>
+
+<!-- MAIN CONTENT -->
+<div class="flex-1 flex flex-col overflow-hidden">
+
+  <!-- Top bar -->
+  <header class="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center flex-shrink-0">
+    <div>
+      <h1 class="font-semibold text-gray-800 text-lg">{% block page_title %}Dashboard{% endblock %}</h1>
+      <p class="text-gray-400 text-xs">{% block page_subtitle %}{% endblock %}</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-xs text-gray-400">{{ now.strftime('%A, %d %B %Y') if now else '' }}</span>
+      <div class="w-8 h-8 rounded-full bg-kgreen flex items-center justify-center">
+        <span class="text-gold text-xs font-bold">{{ current_user.full_name[0].upper() }}</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Flash messages -->
+  <div class="px-6 pt-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium mb-2
+            {% if category == 'success' %}bg-green-50 text-green-800 border border-green-200
+            {% elif category == 'danger' %}bg-red-50 text-red-800 border border-red-200
+            {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+            <i class="fa-solid {% if category == 'success' %}fa-circle-check{% elif category == 'danger' %}fa-circle-xmark{% else %}fa-circle-info{% endif %}"></i>
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Page content -->
+  <main class="flex-1 overflow-y-auto p-6">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

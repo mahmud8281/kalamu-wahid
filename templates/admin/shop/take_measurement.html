@@ -1,0 +1,145 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Take Measurement — Kalamu Wahid{% endblock %}
+{% block page_title %}{% if is_walkin and not customer %}New Walk-in Customer{% elif is_walkin %}Edit Walk-in Measurement{% else %}Edit Registered Measurement{% endif %}{% endblock %}
+{% block page_subtitle %}Record accurate body measurements{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <a href="{{ url_for('admin_shop.measurements') }}"
+     class="flex items-center gap-2 text-gold text-sm hover:underline mb-6">
+    <i class="fa-solid fa-arrow-left text-xs"></i> Back to Measurements
+  </a>
+
+  <div class="card p-8">
+
+    <!-- Customer info header -->
+    {% if customer and not is_walkin %}
+    <div class="flex items-center gap-4 p-4 bg-kgreen/5 rounded-2xl mb-8">
+      <div class="w-14 h-14 rounded-full bg-gradient-to-br from-kgreen
+                  to-kgreen-light flex items-center justify-center">
+        <span class="text-gold font-bold text-xl">{{ customer.full_name[0].upper() }}</span>
+      </div>
+      <div>
+        <p class="font-semibold text-kgreen text-lg">{{ customer.full_name }}</p>
+        <p class="text-gray-500 text-sm">{{ customer.phone }}</p>
+        <p class="text-gray-400 text-xs">{{ customer.email }}</p>
+      </div>
+    </div>
+    {% elif customer and is_walkin %}
+    <div class="flex items-center gap-4 p-4 bg-amber-50 rounded-2xl mb-8">
+      <div class="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400
+                  to-amber-500 flex items-center justify-center">
+        <span class="text-white font-bold text-xl">{{ customer.full_name[0].upper() }}</span>
+      </div>
+      <div>
+        <p class="font-semibold text-gray-800 text-lg">{{ customer.full_name }}</p>
+        <p class="text-gray-500 text-sm">{{ customer.phone }}</p>
+        {% if customer.address %}
+        <p class="text-gray-400 text-xs">{{ customer.address }}</p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="POST" class="space-y-6">
+
+      <!-- Walk-in customer fields -->
+      {% if is_walkin and not customer %}
+      <div class="border border-gold/20 rounded-2xl p-5 bg-gold/5">
+        <p class="font-semibold text-kgreen mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-gold"></i> Customer Details
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Full Name</label>
+            <input type="text" name="full_name" required
+                   placeholder="Customer full name" class="input-field"/>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Phone Number</label>
+            <input type="tel" name="phone" required
+                   placeholder="+234 800 000 0000" class="input-field"/>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Address (optional)</label>
+            <input type="text" name="address"
+                   placeholder="Home or delivery address" class="input-field"/>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Measurements grid -->
+      <div>
+        <p class="font-semibold text-kgreen mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-ruler text-gold"></i> Body Measurements
+          <span class="text-gray-400 font-normal text-xs">(all in inches)</span>
+        </p>
+
+        <div class="grid grid-cols-2 gap-4">
+          {% set fields = [
+            ('chest',          'Chest',          'fa-expand',           'Around fullest part of chest'),
+            ('shoulder',       'Shoulder',        'fa-arrows-left-right','Across back shoulder to shoulder'),
+            ('sleeve',         'Sleeve',          'fa-hand',             'Shoulder point to wrist'),
+            ('waist',          'Waist',           'fa-circle-dot',       'Around natural waist'),
+            ('neck',           'Neck',            'fa-circle',           'Around base of neck'),
+            ('hip',            'Hip',             'fa-person',           'Around fullest part of hip'),
+            ('shirt_length',   'Shirt Length',    'fa-arrows-up-down',   'Neck base to desired hem'),
+            ('trouser_length', 'Trouser Length',  'fa-ruler-vertical',   'Waist down to ankle'),
+          ] %}
+
+          {% for name, label, icon, hint in fields %}
+          <div class="bg-gray-50 rounded-xl p-3">
+            <label class="block text-xs font-medium text-gray-600 mb-2">
+              <i class="fa-solid {{ icon }} text-gold mr-1 text-xs"></i>
+              {{ label }}
+            </label>
+            <div class="flex items-center gap-2">
+              <input type="number" step="0.5" name="{{ name }}"
+                     placeholder="0.0"
+                     value="{% if measurement and measurement[name] %}{{ measurement[name] }}{% endif %}"
+                     class="input-field text-center font-semibold text-kgreen"/>
+              <span class="text-gray-400 text-xs flex-shrink-0">"</span>
+            </div>
+            <p class="text-gray-400 text-xs mt-1">{{ hint }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Notes (walk-in only) -->
+      {% if is_walkin %}
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">
+          Notes <span class="text-gray-300">(optional)</span>
+        </label>
+        <textarea name="notes" rows="2"
+                  placeholder="Special notes, preferences, style remarks..."
+                  class="input-field resize-none">{{ measurement.notes if measurement else '' }}</textarea>
+      </div>
+      {% endif %}
+
+      <!-- Taken by -->
+      <div class="bg-kgreen/5 rounded-xl p-3 flex items-center gap-3">
+        <i class="fa-solid fa-user-tie text-kgreen"></i>
+        <p class="text-sm text-gray-600">
+          Measurements taken by
+          <span class="font-semibold text-kgreen">{{ current_user.full_name }}</span>
+        </p>
+      </div>
+
+      <div class="flex gap-3">
+        <button type="submit" class="btn-gold flex-1 py-3 rounded-xl text-base shadow-lg">
+          <i class="fa-solid fa-floppy-disk mr-2"></i>
+          {% if measurement %}Update Measurements{% else %}Save Measurements{% endif %}
+        </button>
+        <a href="{{ url_for('admin_shop.measurements') }}"
+           class="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600
+                  hover:bg-gray-50 text-center font-medium transition-all">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
