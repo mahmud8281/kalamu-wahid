@@ -114,31 +114,32 @@ def create_app():
 
     return app
 
-def create_default_admin(app):
-    from models.user_model import User
-    import secrets
-    with app.app_context():
-        if not User.query.filter_by(role='admin').first():
-            strong_password = secrets.token_urlsafe(16)
-            admin_user = User(
-                full_name = 'CEO Admin',
-                email     = 'admin@kalamu.com',
-                phone     = '07082815719',
-                role      = 'admin'
-            )
-            admin_user.set_password(strong_password)
-            db.session.add(admin_user)
-            db.session.commit()
-            print('=' * 50)
-            print('ADMIN ACCOUNT CREATED')
-            print('Email:    admin@kalamu.com')
-            print(f'Password: {strong_password}')
-            print('SAVE THIS PASSWORD — it will not show again')
-            print('=' * 50)
+import os
+from werkzeug.security import generate_password_hash
 
 application = create_app()
 
-import os
+def create_admin():
+    from models import User
+    from extensions import db
+
+    admin_email = "admin@kalamu.com"
+    admin_password = "Muhammad9891@"
+
+    existing = User.query.filter_by(email=admin_email).first()
+
+    if not existing:
+        admin = User(
+            email=admin_email,
+            password=generate_password_hash(admin_password),
+            role="admin"
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("ADMIN CREATED")
+
+with application.app_context():
+    create_admin()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
