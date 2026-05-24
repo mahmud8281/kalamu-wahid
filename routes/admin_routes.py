@@ -5,6 +5,9 @@ from models.order_model import Order
 from models.user_model import User
 from models.measurement_model import Measurement
 from models.gallery_model import GalleryImage
+from models.feedback_model import Feedback
+from models.notification_model import Notification
+from utils.notifications import notify_order_status
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -70,6 +73,10 @@ def dashboard():
     ).group_by(Order.style_type).order_by(
         func.count(Order.id).desc()).all()
 
+    total_feedback = Feedback.query.count()
+    new_feedback   = Feedback.query.order_by(
+        Feedback.created_at.desc()).limit(5).all()
+
     return render_template('admin/dashboard.html',
         orders=orders, customers=customers, staff=staff,
         pending=pending, progress=progress,
@@ -78,14 +85,17 @@ def dashboard():
         total_paid=total_paid,
         total_balance=total_balance,
         monthly_data=monthly_data,
-        style_data=style_data)
+        style_data=style_data,
+        total_feedback=total_feedback,
+        new_feedback=new_feedback)
 
 @admin.route('/orders')
 @login_required
 @admin_required
 def orders():
     status     = request.args.get('status', 'all')
-    all_orders = Order.query.order_by(Order.created_at.desc()).all() \
+    all_orders = Order.query.order_by(
+        Order.created_at.desc()).all() \
         if status == 'all' else \
         Order.query.filter_by(status=status).order_by(
             Order.created_at.desc()).all()
@@ -97,9 +107,16 @@ def orders():
 @login_required
 @admin_required
 def update_status(order_id):
-    o        = Order.query.get_or_404(order_id)
-    o.status = request.form.get('status')
+    o          = Order.query.get_or_404(order_id)
+    new_status = request.form.get('status')
+    old_status = o.status
+    o.status   = new_status
     db.session.commit()
+
+    # notify customer only if status actually changed
+    if new_status != old_status:
+        notify_order_status(o)
+
     flash(f'Order #{order_id} updated to {o.status}.', 'success')
     return redirect(request.referrer or url_for('admin.orders'))
 
@@ -185,7 +202,6 @@ def upload_image():
 
     uploaded = 0
     rejected = 0
-
     for i, file in enumerate(files):
         if file and '.' in file.filename and \
            file.filename.rsplit('.', 1)[1].lower() in ALLOWED:
@@ -193,7 +209,8 @@ def upload_image():
             filename  = f"gallery_{timestamp}_{i}_{file.filename}"
             file.save(os.path.join(Config.UPLOAD_FOLDER, filename))
             img = GalleryImage(
-                title    = f"{title} {i+1}".strip() if len(files) > 1 else title,
+                title    = f"{title} {i+1}".strip()
+                           if len(files) > 1 else title,
                 category = category,
                 filename = filename,
                 featured = featured if i == 0 else False
@@ -234,7 +251,8 @@ def staff():
 @login_required
 @ceo_required
 def add_staff():
-    if User.query.filter_by(email=request.form.get('email')).first():
+    if User.query.filter_by(
+            email=request.form.get('email')).first():
         flash('Email already exists.', 'danger')
         return redirect(url_for('admin.staff'))
     s = User(
@@ -278,8 +296,10 @@ def whatsapp_customer(user_id):
         msg += f"Outstanding balance: ₦{balance:,.0f}\n\n"
     msg += "Thank you for choosing Kalamu Wahid Tailoring Synergy. 🧵"
 
-    number = customer.phone.replace('+','').replace(' ','').replace('-','')
+    number = customer.phone.replace(
+        '+','').replace(' ','').replace('-','')
     if number.startswith('0'):
         number = '234' + number[1:]
-    wa_url = f"https://wa.me/{number}?text={urllib.parse.quote(msg)}"
+    wa_url = (f"https://wa.me/{number}?"
+              f"text={urllib.parse.quote(msg)}")
     return redirect(wa_url)

@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% block title %}Book Appointment — Kalamu Wahid{% endblock %}
+{% block content %}
+
+<section class="bg-gradient-to-br from-kgreen-dark to-kgreen py-16 px-4 text-center">
+  <p class="text-gold font-semibold text-sm tracking-widest uppercase mb-2">
+    Visit Us
+  </p>
+  <h1 class="font-display text-4xl md:text-5xl font-bold text-white mb-4">
+    Book an Appointment
+  </h1>
+  <p class="text-kcream/70 max-w-xl mx-auto text-sm">
+    Schedule a measurement session, fitting, or consultation at our shop.
+  </p>
+</section>
+
+<div class="max-w-4xl mx-auto px-4 py-12">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <!-- Info panel -->
+    <div class="space-y-4">
+      <div class="card p-6">
+        <h3 class="font-semibold text-kgreen mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-clock text-gold"></i> Working Hours
+        </h3>
+        <div class="space-y-2 text-sm">
+          {% for day, hours in [
+            ('Monday – Friday', '8:00 AM – 6:00 PM'),
+            ('Saturday',        '8:00 AM – 4:00 PM'),
+            ('Sunday',          'Closed'),
+          ] %}
+          <div class="flex justify-between py-1 border-b border-gray-50 last:border-0">
+            <span class="text-gray-500">{{ day }}</span>
+            <span class="font-medium
+              {% if day == 'Sunday' %}text-red-400{% else %}text-kgreen{% endif %}">
+              {{ hours }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card p-6">
+        <h3 class="font-semibold text-kgreen mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-scissors text-gold"></i> Our Services
+        </h3>
+        <ul class="space-y-2">
+          {% for s in services %}
+          <li class="flex items-center gap-2 text-sm text-gray-600">
+            <i class="fa-solid fa-check text-gold text-xs"></i> {{ s }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="card p-6">
+        <h3 class="font-semibold text-kgreen mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-location-dot text-gold"></i> Location
+        </h3>
+        <p class="text-gray-500 text-sm">Kano, Nigeria</p>
+        <a href="https://wa.me/2348000000000?text=Hello,%20I%20need%20directions%20to%20your%20shop."
+           target="_blank"
+           class="mt-3 flex items-center gap-2 text-green-600 text-sm
+                  hover:underline">
+          <i class="fa-brands fa-whatsapp"></i> Get directions on WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <!-- Booking form -->
+    <div class="lg:col-span-2 card p-8">
+      <h2 class="font-semibold text-kgreen text-xl mb-6 flex items-center gap-2">
+        <i class="fa-solid fa-calendar-plus text-gold"></i>
+        Schedule Your Visit
+      </h2>
+
+      <form method="POST" class="space-y-5">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-sm font-medium text-kgreen mb-1">
+              Full Name <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+              <i class="fa-solid fa-user absolute left-3 top-1/2
+                        -translate-y-1/2 text-gray-400 text-sm"></i>
+              <input type="text" name="name" required
+                     value="{{ current_user.full_name
+                              if current_user.is_authenticated else '' }}"
+                     placeholder="Your full name"
+                     class="input-field pl-9"/>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-kgreen mb-1">
+              Phone Number <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+              <i class="fa-solid fa-phone absolute left-3 top-1/2
+                        -translate-y-1/2 text-gray-400 text-sm"></i>
+              <input type="tel" name="phone" required
+                     value="{{ current_user.phone
+                              if current_user.is_authenticated else '' }}"
+                     placeholder="+234 800 000 0000"
+                     class="input-field pl-9"/>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-kgreen mb-1">
+            Email
+            <span class="text-gray-400 font-normal text-xs">(optional)</span>
+          </label>
+          <div class="relative">
+            <i class="fa-solid fa-envelope absolute left-3 top-1/2
+                      -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="email" name="email"
+                   value="{{ current_user.email
+                            if current_user.is_authenticated else '' }}"
+                   placeholder="your@email.com"
+                   class="input-field pl-9"/>
+          </div>
+        </div>
+
+        <!-- Service type -->
+        <div>
+          <label class="block text-sm font-medium text-kgreen mb-2">
+            Service Type <span class="text-red-400">*</span>
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            {% for s in services %}
+            <label class="relative cursor-pointer">
+              <input type="radio" name="service_type"
+                     value="{{ s }}" class="sr-only peer" required/>
+              <div class="border-2 border-gray-100
+                          peer-checked:border-gold peer-checked:bg-gold/5
+                          rounded-xl p-3 text-center transition-all
+                          hover:border-gold/40 text-xs font-medium
+                          text-gray-600 peer-checked:text-kgreen">
+                {{ s }}
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Date -->
+        <div>
+          <label class="block text-sm font-medium text-kgreen mb-1">
+            Preferred Date <span class="text-red-400">*</span>
+          </label>
+          <div class="relative">
+            <i class="fa-solid fa-calendar absolute left-3 top-1/2
+                      -translate-y-1/2 text-gray-400 text-sm"></i>
+            <input type="date" name="date" required id="date-input"
+                   class="input-field pl-9"/>
+          </div>
+        </div>
+
+        <!-- Time slots -->
+        <div>
+          <label class="block text-sm font-medium text-kgreen mb-2">
+            Preferred Time <span class="text-red-400">*</span>
+          </label>
+          <div class="grid grid-cols-3 sm:grid-cols-5 gap-2" id="time-slots">
+            {% for slot in time_slots %}
+            <label class="relative cursor-pointer">
+              <input type="radio" name="time"
+                     value="{{ slot }}" class="sr-only peer" required/>
+              <div class="border-2 border-gray-100
+                          peer-checked:border-gold peer-checked:bg-gold/5
+                          rounded-xl p-2 text-center transition-all
+                          hover:border-gold/40 text-xs font-medium
+                          text-gray-600 peer-checked:text-kgreen slot-option"
+                   data-slot="{{ slot }}">
+                {{ slot }}
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+          <p class="text-gray-400 text-xs mt-2">
+            <i class="fa-solid fa-circle text-red-400 text-xs mr-1"></i>
+            Greyed out slots are already booked
+          </p>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-sm font-medium text-kgreen mb-1">
+            Additional Notes
+            <span class="text-gray-400 font-normal text-xs">(optional)</span>
+          </label>
+          <textarea name="notes" rows="3"
+                    placeholder="Any special requirements or questions..."
+                    class="input-field resize-none"></textarea>
+        </div>
+
+        <button type="submit"
+                class="btn-gold w-full py-4 rounded-xl text-base shadow-xl">
+          <i class="fa-solid fa-calendar-check mr-2"></i>
+          Confirm Appointment
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const bookedSlots = {{ booked_slots | tojson }};
+const dateInput   = document.getElementById('date-input');
+const today       = new Date().toISOString().split('T')[0];
+dateInput.min     = today;
+
+dateInput.addEventListener('change', function() {
+  const selected = new Date(this.value);
+  const day      = selected.getUTCDay();
+  if (day === 0) {
+    alert('We are closed on Sundays. Please select another day.');
+    this.value = '';
+    return;
+  }
+  updateSlots(this.value);
+});
+
+function updateSlots(date) {
+  document.querySelectorAll('.slot-option').forEach(div => {
+    const slotTime = div.getAttribute('data-slot');
+    const isBooked = bookedSlots.some(
+      b => b.date === date && b.time === slotTime
+    );
+    const radio = div.previousElementSibling;
+    if (isBooked) {
+      div.classList.add('opacity-40','cursor-not-allowed','line-through');
+      div.classList.remove('hover:border-gold/40');
+      radio.disabled = true;
+    } else {
+      div.classList.remove('opacity-40','cursor-not-allowed','line-through');
+      div.classList.add('hover:border-gold/40');
+      radio.disabled = false;
+    }
+  });
+}
+</script>
+{% endblock %}

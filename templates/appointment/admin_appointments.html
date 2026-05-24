@@ -1,0 +1,178 @@
+{% extends 'admin/base_admin.html' %}
+{% block title %}Appointments — Kalamu Wahid Admin{% endblock %}
+{% block page_title %}Appointment Management{% endblock %}
+{% block page_subtitle %}View and manage all customer appointment bookings{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+  {% set total     = appointments|length %}
+  {% set pending   = appointments|selectattr('status','equalto','Pending')  |list|length %}
+  {% set confirmed = appointments|selectattr('status','equalto','Confirmed')|list|length %}
+  {% set completed = appointments|selectattr('status','equalto','Completed')|list|length %}
+  {% for label, value, color in [
+    ('Total',     total,     'from-kgreen to-kgreen-light'),
+    ('Pending',   pending,   'from-amber-500 to-amber-400'),
+    ('Confirmed', confirmed, 'from-blue-600 to-blue-500'),
+    ('Completed', completed, 'from-emerald-600 to-emerald-500'),
+  ] %}
+  <div class="card p-4 flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br {{ color }}
+                flex items-center justify-center flex-shrink-0">
+      <i class="fa-solid fa-calendar text-white text-sm"></i>
+    </div>
+    <div>
+      <p class="text-gray-400 text-xs">{{ label }}</p>
+      <p class="font-bold text-xl text-gray-800">{{ value }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Filter tabs -->
+<div class="flex gap-2 mb-6 flex-wrap">
+  {% for s in ['all','Pending','Confirmed','Completed','Cancelled'] %}
+  <a href="{{ url_for('appointment_bp.admin_appointments', status=s) }}"
+     class="px-4 py-2 rounded-xl text-sm font-medium transition-all
+     {% if current_status == s %}bg-kgreen text-gold
+     {% else %}bg-white text-gray-500 hover:bg-gray-50 border border-gray-100{% endif %}">
+    {{ s.title() }}
+  </a>
+  {% endfor %}
+</div>
+
+{% if appointments %}
+<div class="space-y-3">
+  {% for a in appointments %}
+  <div class="card p-5 flex flex-col sm:flex-row
+              justify-between items-start gap-4">
+    <div class="flex items-start gap-4 flex-1">
+      <!-- Status icon -->
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center
+                  flex-shrink-0
+                  {% if a.status == 'Confirmed' %}bg-green-100
+                  {% elif a.status == 'Cancelled' %}bg-red-100
+                  {% elif a.status == 'Completed' %}bg-gray-100
+                  {% else %}bg-amber-100{% endif %}">
+        <i class="fa-solid fa-calendar text-lg
+          {% if a.status == 'Confirmed' %}text-green-600
+          {% elif a.status == 'Cancelled' %}text-red-500
+          {% elif a.status == 'Completed' %}text-gray-500
+          {% else %}text-amber-500{% endif %}"></i>
+      </div>
+
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap mb-1">
+          <p class="font-semibold text-gray-800">{{ a.name }}</p>
+          <span class="text-xs px-2.5 py-0.5 rounded-full font-semibold
+            {% if a.status == 'Confirmed' %}bg-green-100 text-green-700
+            {% elif a.status == 'Cancelled' %}bg-red-100 text-red-600
+            {% elif a.status == 'Completed' %}bg-gray-100 text-gray-600
+            {% else %}bg-amber-100 text-amber-700{% endif %}">
+            {{ a.status }}
+          </span>
+          {% if a.user_id %}
+          <span class="text-xs bg-kgreen/10 text-kgreen
+                       px-2 py-0.5 rounded-full">
+            <i class="fa-solid fa-circle-check text-xs mr-1"></i>
+            Registered
+          </span>
+          {% endif %}
+        </div>
+
+        <p class="text-gray-600 text-sm font-medium">{{ a.service_type }}</p>
+
+        <div class="flex items-center gap-4 mt-1 flex-wrap">
+          <p class="text-gray-400 text-xs flex items-center gap-1">
+            <i class="fa-solid fa-calendar text-gold text-xs"></i>
+            {{ a.date }}
+          </p>
+          <p class="text-gray-400 text-xs flex items-center gap-1">
+            <i class="fa-solid fa-clock text-gold text-xs"></i>
+            {{ a.time }}
+          </p>
+          <p class="text-gray-400 text-xs flex items-center gap-1">
+            <i class="fa-solid fa-phone text-gold text-xs"></i>
+            {{ a.phone }}
+          </p>
+          {% if a.email %}
+          <p class="text-gray-400 text-xs flex items-center gap-1">
+            <i class="fa-solid fa-envelope text-gold text-xs"></i>
+            {{ a.email }}
+          </p>
+          {% endif %}
+        </div>
+
+        {% if a.notes %}
+        <p class="text-gray-400 text-xs mt-1 italic bg-gray-50
+                  rounded-lg px-3 py-1.5 mt-2">
+          "{{ a.notes }}"
+        </p>
+        {% endif %}
+
+        <p class="text-gray-300 text-xs mt-2">
+          Booked: {{ a.created_at.strftime('%d %b %Y at %I:%M %p') }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <!-- WhatsApp confirmation -->
+      {% set number = a.phone.replace('+','').replace(' ','').replace('-','') %}
+      {% if number.startswith('0') %}
+        {% set number = '234' + number[1:] %}
+      {% endif %}
+      <a href="https://wa.me/{{ number }}?text={{ ('Assalamu Alaikum ' + a.name + ', your appointment on ' + a.date + ' at ' + a.time + ' for ' + a.service_type + ' has been confirmed. — Kalamu Wahid Tailoring Synergy') | urlencode }}"
+         target="_blank"
+         class="w-9 h-9 rounded-xl bg-green-500 hover:bg-green-600
+                flex items-center justify-center transition-colors"
+         title="Send WhatsApp confirmation">
+        <i class="fa-brands fa-whatsapp text-white text-sm"></i>
+      </a>
+
+      <!-- Status update -->
+      <form method="POST"
+            action="{{ url_for('appointment_bp.update_appointment',
+                               appt_id=a.id) }}">
+        <select name="status" onchange="this.form.submit()"
+          class="text-xs border border-gray-200 rounded-xl px-2 py-2
+                 bg-white focus:outline-none focus:border-gold
+                 cursor-pointer">
+          {% for s in ['Pending','Confirmed','Completed','Cancelled'] %}
+          <option {% if a.status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </form>
+
+      <!-- Delete -->
+      <form method="POST"
+            action="{{ url_for('appointment_bp.delete_appointment',
+                               appt_id=a.id) }}"
+            onsubmit="return confirm('Delete this appointment?')">
+        <button type="submit"
+          class="w-9 h-9 rounded-xl bg-red-50 text-red-400
+                 hover:bg-red-100 flex items-center justify-center
+                 transition-colors">
+          <i class="fa-solid fa-trash text-xs"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="card p-16 text-center">
+  <i class="fa-solid fa-calendar text-5xl text-gray-200 mb-4"></i>
+  <h3 class="font-semibold text-kgreen text-lg mb-2">No appointments found</h3>
+  <p class="text-gray-400 text-sm">
+    {% if current_status != 'all' %}
+      No {{ current_status.lower() }} appointments.
+    {% else %}
+      No appointments have been booked yet.
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+{% endblock %}

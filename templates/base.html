@@ -4,49 +4,78 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{% block title %}Kalamu Wahid Tailoring Synergy{% endblock %}</title>
+
+  <!-- Preconnect for speed -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com"/>
+
+  <!-- Fonts — only what we need -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous"/>
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            gold:    { DEFAULT:'#C9A84C', light:'#F0D080', dark:'#9A7B2F' },
-            kgreen:  { DEFAULT:'#1B4332', light:'#2D6A4F', dark:'#0D2B1E' },
-            kcream:  { DEFAULT:'#FDF8EF', light:'#FFFDF9', dark:'#F0E8D5' },
+            gold:   { DEFAULT:'#C9A84C', light:'#F0D080', dark:'#9A7B2F' },
+            kgreen: { DEFAULT:'#1B4332', light:'#2D6A4F', dark:'#0D2B1E' },
+            kcream: { DEFAULT:'#FDF8EF', light:'#FFFDF9', dark:'#F0E8D5' },
           },
           fontFamily: {
-            display: ['Playfair Display','serif'],
-            body:    ['Inter','sans-serif'],
+            display: ['Playfair Display', 'serif'],
+            body:    ['Inter', 'sans-serif'],
           }
         }
       }
     }
   </script>
+
+  <!-- Translations -->
+  <script src="{{ url_for('static', filename='translations.js') }}" defer></script>
+
   <style>
     body { font-family:'Inter',sans-serif; background:#FDF8EF; }
-    .glass { background:rgba(255,255,255,0.7); backdrop-filter:blur(12px); }
-    .btn-gold { background:linear-gradient(135deg,#C9A84C,#F0D080); color:#1B4332; font-weight:600; transition:all .3s; }
-    .btn-gold:hover { background:linear-gradient(135deg,#9A7B2F,#C9A84C); transform:translateY(-1px); box-shadow:0 8px 25px rgba(201,168,76,0.4); }
-    .btn-green { background:linear-gradient(135deg,#1B4332,#2D6A4F); color:#F0D080; font-weight:600; transition:all .3s; }
-    .btn-green:hover { background:linear-gradient(135deg,#0D2B1E,#1B4332); transform:translateY(-1px); box-shadow:0 8px 25px rgba(27,67,50,0.4); }
-    .card { background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(27,67,50,0.08); transition:all .3s; }
-    .card:hover { box-shadow:0 8px 40px rgba(27,67,50,0.14); transform:translateY(-2px); }
-    .nav-link { position:relative; transition:color .3s; }
-    .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:#C9A84C; transition:width .3s; }
+    .glass { background:rgba(255,255,255,0.85); backdrop-filter:blur(10px); }
+    .btn-gold { background:linear-gradient(135deg,#C9A84C,#F0D080); color:#1B4332; font-weight:600; transition:all .25s; }
+    .btn-gold:hover { filter:brightness(0.92); transform:translateY(-1px); box-shadow:0 6px 20px rgba(201,168,76,0.35); }
+    .btn-green { background:linear-gradient(135deg,#1B4332,#2D6A4F); color:#F0D080; font-weight:600; transition:all .25s; }
+    .btn-green:hover { filter:brightness(1.1); transform:translateY(-1px); }
+    .card { background:#fff; border-radius:16px; box-shadow:0 2px 16px rgba(27,67,50,0.07); transition:box-shadow .2s, transform .2s; }
+    .card:hover { box-shadow:0 6px 32px rgba(27,67,50,0.12); transform:translateY(-2px); }
+    .nav-link { position:relative; transition:color .2s; }
+    .nav-link::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:#C9A84C; transition:width .2s; }
     .nav-link:hover::after { width:100%; }
     .badge-pending   { background:#FEF3C7; color:#92400E; }
     .badge-progress  { background:#DBEAFE; color:#1E40AF; }
     .badge-ready     { background:#D1FAE5; color:#065F46; }
     .badge-delivered { background:#E5E7EB; color:#374151; }
-    .input-field { width:100%; padding:0.65rem 1rem; border:1.5px solid #E5E7EB; border-radius:10px; font-size:0.95rem; transition:all .3s; background:#FAFAFA; }
-    .input-field:focus { outline:none; border-color:#C9A84C; background:#fff; box-shadow:0 0 0 3px rgba(201,168,76,0.15); }
+    .input-field { width:100%; padding:0.65rem 1rem; border:1.5px solid #E5E7EB; border-radius:10px; font-size:0.95rem; transition:border-color .2s, box-shadow .2s; background:#FAFAFA; }
+    .input-field:focus { outline:none; border-color:#C9A84C; background:#fff; box-shadow:0 0 0 3px rgba(201,168,76,0.12); }
     .section-title { font-family:'Playfair Display',serif; color:#1B4332; }
-    ::-webkit-scrollbar { width:6px; }
-    ::-webkit-scrollbar-track { background:#FDF8EF; }
+    ::-webkit-scrollbar { width:5px; }
     ::-webkit-scrollbar-thumb { background:#C9A84C; border-radius:10px; }
-    .pattern-bg { background-image: repeating-linear-gradient(45deg,rgba(201,168,76,0.04) 0,rgba(201,168,76,0.04) 1px,transparent 0,transparent 50%); background-size:20px 20px; }
+    .pattern-bg { background-image:repeating-linear-gradient(45deg,rgba(201,168,76,0.03) 0,rgba(201,168,76,0.03) 1px,transparent 0,transparent 50%); background-size:20px 20px; }
+    .notif-badge { position:absolute; top:-4px; right:-4px; background:#EF4444; color:white; font-size:10px; font-weight:700; min-width:18px; height:18px; border-radius:999px; display:flex; align-items:center; justify-content:center; padding:0 3px; }
+    @media (max-width:640px) {
+      .section-title { font-size:1.75rem !important; }
+      .card { border-radius:12px; }
+      main { padding-bottom:80px; }
+    }
+    .mobile-nav { display:none; position:fixed; bottom:0; left:0; right:0; background:rgba(255,255,255,0.97); border-top:1px solid rgba(201,168,76,0.15); z-index:40; padding:6px 0 10px; box-shadow:0 -2px 12px rgba(0,0,0,0.05); }
+    @media (max-width:768px) {
+      .mobile-nav { display:flex; }
+      .whatsapp-float { bottom:80px !important; }
+    }
+    .mobile-nav a { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; font-size:9px; font-weight:500; color:#6B7280; text-decoration:none; transition:color .15s; padding:4px 0; }
+    .mobile-nav a.active, .mobile-nav a:hover { color:#1B4332; }
+    .mobile-nav a i { font-size:17px; }
+    .mobile-nav a.active i { color:#C9A84C; }
   </style>
   {% block extra_head %}{% endblock %}
 </head>
@@ -69,40 +98,77 @@
       </a>
 
       <!-- Desktop Nav -->
-      <div class="hidden md:flex items-center gap-7 text-sm font-medium text-kgreen">
-        <a href="{{ url_for('customer.home') }}" class="nav-link">Home</a>
-        <a href="#gallery" class="nav-link">Gallery</a>
-        <a href="#services" class="nav-link">Services</a>
-        <a href="{{ url_for('shop.shop_home') }}" class="nav-link">Shop</a>
-        <a href="#contact" class="nav-link">Contact</a>
+      <div class="hidden md:flex items-center gap-5 text-sm font-medium text-kgreen">
+        <a href="{{ url_for('customer.home') }}" class="nav-link" data-t="home">Home</a>
+        <a href="#gallery" class="nav-link" data-t="gallery">Gallery</a>
+        <a href="{{ url_for('shop.shop_home') }}" class="nav-link" data-t="shop">Shop</a>
+        <a href="{{ url_for('appointment_bp.book_appointment') }}" class="nav-link" data-t="book_appt">Appointment</a>
+        <a href="{{ url_for('feedback_bp.feedback') }}" class="nav-link" data-t="feedback">Feedback</a>
+        <a href="#contact" class="nav-link" data-t="contact">Contact</a>
+
         {% if current_user.is_authenticated %}
           {% if current_user.is_admin() %}
             <a href="{{ url_for('admin.dashboard') }}" class="nav-link text-gold-dark">Admin Panel</a>
           {% else %}
-            <a href="{{ url_for('customer.dashboard') }}" class="nav-link">Dashboard</a>
+            <a href="{{ url_for('customer.dashboard') }}" class="nav-link" data-t="dashboard">Dashboard</a>
+            <a href="{{ url_for('customer.profile') }}" class="nav-link" data-t="profile">Profile</a>
           {% endif %}
-          <a href="{{ url_for('auth.logout') }}" class="btn-gold px-4 py-2 rounded-full text-sm">Logout</a>
+
+          <!-- Notification bell -->
+          <a href="{{ url_for('notification_bp.all_notifications') }}"
+             class="relative text-kgreen hover:text-gold transition-colors">
+            <i class="fa-solid fa-bell text-lg"></i>
+            {% if unread_count > 0 %}
+            <span class="notif-badge">{{ unread_count }}</span>
+            {% endif %}
+          </a>
+
+          <a href="{{ url_for('auth.logout') }}" class="btn-gold px-4 py-2 rounded-full text-sm" data-t="logout">Logout</a>
         {% else %}
-          <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
-          <a href="{{ url_for('auth.register') }}" class="btn-gold px-5 py-2 rounded-full text-sm">Get Started</a>
+          <a href="{{ url_for('auth.login') }}" class="nav-link" data-t="login">Login</a>
+          <a href="{{ url_for('auth.register') }}" class="btn-gold px-5 py-2 rounded-full text-sm" data-t="register">Get Started</a>
         {% endif %}
+
+        <!-- Language switcher -->
+        <div class="flex items-center gap-1 border border-gray-200 rounded-full p-0.5">
+          <button onclick="setLang('en')" data-lang="en"
+                  class="lang-btn px-3 py-1 rounded-full text-xs font-medium transition-all bg-gold text-kgreen">
+            EN
+          </button>
+          <button onclick="setLang('ha')" data-lang="ha"
+                  class="lang-btn px-3 py-1 rounded-full text-xs font-medium transition-all bg-white text-gray-500">
+            HA
+          </button>
+        </div>
       </div>
 
       <!-- Mobile menu button -->
-      <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden text-kgreen">
+      <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')"
+              class="md:hidden text-kgreen">
         <i class="fa-solid fa-bars text-xl"></i>
       </button>
     </div>
 
-    <!-- Mobile Menu -->
-    <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-2 text-sm font-medium text-kgreen">
+    <!-- Mobile dropdown -->
+    <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-1 text-sm font-medium text-kgreen">
       <a href="{{ url_for('customer.home') }}" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Home</a>
       <a href="#gallery" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Gallery</a>
-      <a href="#services" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Services</a>
+      <a href="{{ url_for('shop.shop_home') }}" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Shop</a>
+      <a href="{{ url_for('appointment_bp.book_appointment') }}" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Book Appointment</a>
+      <a href="{{ url_for('feedback_bp.feedback') }}" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Feedback</a>
       <a href="#contact" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Contact</a>
       {% if current_user.is_authenticated %}
-       <a href="{{ url_for('customer.dashboard') }}" class="nav-link">Dashboard</a>
-<a href="{{ url_for('customer.profile') }}" class="nav-link">Profile</a>
+        <a href="{{ url_for('customer.dashboard') }}" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Dashboard</a>
+        <a href="{{ url_for('customer.profile') }}" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Profile</a>
+        <a href="{{ url_for('notification_bp.all_notifications') }}"
+           class="block py-2 px-3 rounded-lg hover:bg-gold/10 flex items-center gap-2">
+          Notifications
+          {% if unread_count > 0 %}
+          <span class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+            {{ unread_count }}
+          </span>
+          {% endif %}
+        </a>
         <a href="{{ url_for('auth.logout') }}" class="block py-2 px-3 rounded-lg bg-gold/20">Logout</a>
       {% else %}
         <a href="{{ url_for('auth.login') }}" class="block py-2 px-3 rounded-lg hover:bg-gold/10">Login</a>
@@ -121,7 +187,10 @@
           {% if category == 'success' %}bg-green-50 text-green-800 border border-green-200
           {% elif category == 'danger' %}bg-red-50 text-red-800 border border-red-200
           {% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
-          <i class="fa-solid {% if category == 'success' %}fa-circle-check{% elif category == 'danger' %}fa-circle-xmark{% else %}fa-circle-info{% endif %}"></i>
+          <i class="fa-solid
+            {% if category == 'success' %}fa-circle-check
+            {% elif category == 'danger' %}fa-circle-xmark
+            {% else %}fa-circle-info{% endif %}"></i>
           {{ message }}
         </div>
       {% endfor %}
@@ -132,10 +201,62 @@
 <!-- PAGE CONTENT -->
 <main>{% block content %}{% endblock %}</main>
 
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-nav">
+  <a href="{{ url_for('customer.home') }}"
+     class="{{ 'active' if request.endpoint == 'customer.home' else '' }}">
+    <i class="fa-solid fa-house"></i><span>Home</span>
+  </a>
+  <a href="{{ url_for('shop.shop_home') }}"
+     class="{{ 'active' if request.endpoint and 'shop' in request.endpoint else '' }}">
+    <i class="fa-solid fa-store"></i><span>Shop</span>
+  </a>
+  {% if current_user.is_authenticated %}
+  <a href="{{ url_for('order.place_order') }}"
+     class="{{ 'active' if request.endpoint == 'order.place_order' else '' }}">
+    <i class="fa-solid fa-scissors"></i><span>Order</span>
+  </a>
+  <a href="{{ url_for('notification_bp.all_notifications') }}"
+     class="{{ 'active' if request.endpoint and 'notification' in request.endpoint else '' }}"
+     style="position:relative">
+    <i class="fa-solid fa-bell"></i>
+    {% if unread_count > 0 %}
+    <span style="position:absolute;top:0;right:12px;background:#EF4444;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 3px;">
+      {{ unread_count }}
+    </span>
+    {% endif %}
+    <span>Alerts</span>
+  </a>
+  <a href="{{ url_for('customer.dashboard') }}"
+     class="{{ 'active' if request.endpoint == 'customer.dashboard' else '' }}">
+    <i class="fa-solid fa-gauge"></i><span>Dashboard</span>
+  </a>
+  <a href="{{ url_for('customer.profile') }}"
+     class="{{ 'active' if request.endpoint == 'customer.profile' else '' }}">
+    <i class="fa-solid fa-user"></i><span>Profile</span>
+  </a>
+  {% else %}
+  <a href="{{ url_for('appointment_bp.book_appointment') }}"
+     class="{{ 'active' if request.endpoint and 'appointment' in request.endpoint else '' }}">
+    <i class="fa-solid fa-calendar"></i><span>Appointment</span>
+  </a>
+  <a href="{{ url_for('feedback_bp.feedback') }}"
+     class="{{ 'active' if request.endpoint and 'feedback' in request.endpoint else '' }}">
+    <i class="fa-solid fa-comments"></i><span>Feedback</span>
+  </a>
+  <a href="{{ url_for('auth.login') }}"
+     class="{{ 'active' if request.endpoint == 'auth.login' else '' }}">
+    <i class="fa-solid fa-right-to-bracket"></i><span>Login</span>
+  </a>
+  {% endif %}
+</nav>
+
 <!-- WHATSAPP FLOATING BUTTON -->
 <a href="https://wa.me/2347082815719?text=Hello%20Kalamu%20Wahid%20Tailoring,%20I%20want%20to%20place%20an%20order"
    target="_blank"
-   class="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500 hover:bg-green-600 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-110"
+   class="whatsapp-float fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-500
+          hover:bg-green-600 rounded-full flex items-center justify-center
+          shadow-xl transition-all hover:scale-110"
    title="Chat on WhatsApp">
   <i class="fa-brands fa-whatsapp text-white text-2xl"></i>
 </a>
@@ -153,29 +274,33 @@
           <p class="text-xs text-gold/70">Tailoring Synergy</p>
         </div>
       </div>
-      <p class="text-sm text-kcream/70 leading-relaxed">Premium Hausa tailoring crafted with passion, precision and cultural pride.</p>
+      <p class="text-sm text-kcream/70 leading-relaxed">
+        Premium Hausa tailoring crafted with passion, precision and cultural pride.
+      </p>
     </div>
     <div>
       <p class="font-semibold text-gold mb-3">Quick Links</p>
       <ul class="space-y-2 text-sm text-kcream/70">
-        <li><a href="#" class="hover:text-gold transition-colors">Home</a></li>
-        <li><a href="#gallery" class="hover:text-gold transition-colors">Gallery</a></li>
+        <li><a href="{{ url_for('customer.home') }}" class="hover:text-gold transition-colors">Home</a></li>
+        <li><a href="{{ url_for('shop.shop_home') }}" class="hover:text-gold transition-colors">Shop</a></li>
         <li><a href="{{ url_for('order.place_order') }}" class="hover:text-gold transition-colors">Place Order</a></li>
+        <li><a href="{{ url_for('appointment_bp.book_appointment') }}" class="hover:text-gold transition-colors">Book Appointment</a></li>
+        <li><a href="{{ url_for('feedback_bp.feedback') }}" class="hover:text-gold transition-colors">Feedback</a></li>
         <li><a href="#contact" class="hover:text-gold transition-colors">Contact</a></li>
       </ul>
     </div>
     <div id="contact">
       <p class="font-semibold text-gold mb-3">Contact Us</p>
       <ul class="space-y-2 text-sm text-kcream/70">
-        <li class="flex items-center gap-2"><i class="fa-solid fa-phone text-gold text-xs"></i> +234 8039239174, 07082815719 </li>
+        <li class="flex items-center gap-2"><i class="fa-solid fa-phone text-gold text-xs"></i> +234 800 000 0000</li>
         <li class="flex items-center gap-2"><i class="fa-brands fa-whatsapp text-gold text-xs"></i> WhatsApp Available</li>
-        <li class="flex items-center gap-2"><i class="fa-solid fa-location-dot text-gold text-xs"></i> HAdejia, Jigawa, Nigeria</li>
+        <li class="flex items-center gap-2"><i class="fa-solid fa-location-dot text-gold text-xs"></i> Kano, Nigeria</li>
         <li class="flex items-center gap-2"><i class="fa-solid fa-envelope text-gold text-xs"></i> info@kalamuwahid.com</li>
       </ul>
     </div>
   </div>
   <div class="border-t border-gold/20 text-center py-4 text-xs text-kcream/40">
-    &copy; 2026 Kalamu Wahid Tailoring Synergy. All rights reserved.
+    &copy; 2024 Kalamu Wahid Tailoring Synergy. All rights reserved.
   </div>
 </footer>
 

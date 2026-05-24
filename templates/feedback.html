@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% block title %}Feedback & Suggestions — Kalamu Wahid{% endblock %}
+{% block content %}
+
+<!-- Hero -->
+<section class="bg-gradient-to-br from-kgreen-dark to-kgreen py-16 px-4 text-center">
+  <p class="text-gold font-semibold text-sm tracking-widest uppercase mb-2">
+    Your Voice Matters
+  </p>
+  <h1 class="font-display text-4xl md:text-5xl font-bold text-white mb-4">
+    Feedback & Suggestions
+  </h1>
+  <p class="text-kcream/70 max-w-xl mx-auto text-sm">
+    Help us improve Kalamu Wahid Tailoring Synergy.
+    Share your experience, ideas, or suggestions below.
+  </p>
+</section>
+
+<div class="max-w-7xl mx-auto px-4 py-12">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    <!-- LEFT — Submit form -->
+    <div class="lg:col-span-1">
+      <div class="card p-6 sticky top-24">
+        <h2 class="font-semibold text-kgreen text-lg mb-1 flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-gold"></i>
+          Leave Your Feedback
+        </h2>
+        <p class="text-gray-400 text-xs mb-5">
+          No account needed — anyone can share their thoughts.
+        </p>
+
+        <form method="POST" class="space-y-4">
+
+          <!-- Name -->
+          <div>
+            <label class="block text-sm font-medium text-kgreen mb-1">
+              Your Name <span class="text-red-400">*</span>
+            </label>
+            <div class="relative">
+              <i class="fa-solid fa-user absolute left-3 top-1/2
+                        -translate-y-1/2 text-gray-400 text-sm"></i>
+              <input type="text" name="name" required
+                     value="{{ current_user.full_name
+                              if current_user.is_authenticated else '' }}"
+                     placeholder="Your full name"
+                     class="input-field pl-9"/>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label class="block text-sm font-medium text-kgreen mb-1">
+              Email <span class="text-gray-400 font-normal text-xs">(optional)</span>
+            </label>
+            <div class="relative">
+              <i class="fa-solid fa-envelope absolute left-3 top-1/2
+                        -translate-y-1/2 text-gray-400 text-sm"></i>
+              <input type="email" name="email"
+                     value="{{ current_user.email
+                              if current_user.is_authenticated else '' }}"
+                     placeholder="your@email.com"
+                     class="input-field pl-9"/>
+            </div>
+          </div>
+
+          <!-- Category -->
+          <div>
+            <label class="block text-sm font-medium text-kgreen mb-2">
+              Category <span class="text-red-400">*</span>
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              {% set categories = ['Tailoring','Shop','Website',
+                                   'Delivery','Measurements',
+                                   'Payment','General'] %}
+              {% for cat in categories %}
+              <label class="relative cursor-pointer">
+                <input type="radio" name="category"
+                       value="{{ cat }}" class="sr-only peer" required/>
+                <div class="border-2 border-gray-100
+                            peer-checked:border-gold peer-checked:bg-gold/5
+                            rounded-xl p-2 text-center transition-all
+                            hover:border-gold/40 text-xs font-medium text-gray-600
+                            peer-checked:text-kgreen">
+                  {% if cat == 'Tailoring' %}🧵
+                  {% elif cat == 'Shop' %}🛍️
+                  {% elif cat == 'Website' %}💻
+                  {% elif cat == 'Delivery' %}🚚
+                  {% elif cat == 'Measurements' %}📏
+                  {% elif cat == 'Payment' %}💰
+                  {% else %}💬{% endif %}
+                  {{ cat }}
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Message -->
+          <div>
+            <label class="block text-sm font-medium text-kgreen mb-1">
+              Your Message <span class="text-red-400">*</span>
+            </label>
+            <textarea name="message" rows="4" required
+                      placeholder="Share your experience, suggestion,
+or idea for improvement..."
+                      class="input-field resize-none"></textarea>
+          </div>
+
+          <button type="submit" class="btn-gold w-full py-3 rounded-xl
+                                       text-base shadow-lg">
+            <i class="fa-solid fa-paper-plane mr-2"></i>
+            Submit Feedback
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- RIGHT — Feedback list -->
+    <div class="lg:col-span-2">
+
+      <!-- Stats row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div class="card p-4 text-center col-span-2 sm:col-span-1">
+          <p class="font-display text-3xl font-bold text-kgreen">{{ total }}</p>
+          <p class="text-gray-400 text-xs mt-1">Total Feedback</p>
+        </div>
+        {% for cat, emoji in [('Tailoring','🧵'),('Shop','🛍️'),('Delivery','🚚')] %}
+        <div class="card p-4 text-center">
+          <p class="font-display text-3xl font-bold text-kgreen">
+            {{ counts.get(cat, 0) }}
+          </p>
+          <p class="text-gray-400 text-xs mt-1">{{ emoji }} {{ cat }}</p>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Category filter -->
+      <div class="flex gap-2 flex-wrap mb-6">
+        <a href="{{ url_for('feedback_bp.feedback') }}"
+           class="px-4 py-1.5 rounded-full text-xs font-medium transition-all
+           {% if current_category == 'all' %}bg-kgreen text-gold
+           {% else %}bg-white text-gray-500 border border-gray-200
+                      hover:border-kgreen/30{% endif %}">
+          All ({{ total }})
+        </a>
+        {% for cat in categories %}
+        {% set cat_icons = {
+          'Tailoring':'🧵','Shop':'🛍️','Website':'💻',
+          'Delivery':'🚚','Measurements':'📏',
+          'Payment':'💰','General':'💬'
+        } %}
+        <a href="{{ url_for('feedback_bp.feedback', category=cat) }}"
+           class="px-4 py-1.5 rounded-full text-xs font-medium transition-all
+           {% if current_category == cat %}bg-kgreen text-gold
+           {% else %}bg-white text-gray-500 border border-gray-200
+                      hover:border-kgreen/30{% endif %}">
+          {{ cat_icons.get(cat,'💬') }} {{ cat }} ({{ counts.get(cat,0) }})
+        </a>
+        {% endfor %}
+      </div>
+
+      <!-- Feedback cards -->
+      {% if feedback_list %}
+      <div class="space-y-4">
+        {% for f in feedback_list %}
+        <div class="card p-5 hover:shadow-md transition-all">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3 flex-1 min-w-0">
+
+              <!-- Avatar -->
+              <div class="w-11 h-11 rounded-full bg-gradient-to-br
+                          from-kgreen to-kgreen-light flex items-center
+                          justify-center flex-shrink-0 shadow-sm">
+                <span class="text-gold font-bold text-lg">
+                  {{ f.name[0].upper() }}
+                </span>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <!-- Name + category + date -->
+                <div class="flex items-center gap-2 flex-wrap mb-1">
+                  <p class="font-semibold text-kgreen text-sm">
+                    {{ f.name }}
+                  </p>
+                  {% if f.user_id %}
+                  <span class="text-xs bg-kgreen/10 text-kgreen
+                               px-2 py-0.5 rounded-full">
+                    <i class="fa-solid fa-circle-check text-xs mr-1"></i>
+                    Verified Customer
+                  </span>
+                  {% endif %}
+                  <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                    {% if f.category == 'Tailoring' %}
+                      bg-amber-100 text-amber-700
+                    {% elif f.category == 'Shop' %}
+                      bg-blue-100 text-blue-700
+                    {% elif f.category == 'Website' %}
+                      bg-purple-100 text-purple-700
+                    {% elif f.category == 'Delivery' %}
+                      bg-green-100 text-green-700
+                    {% elif f.category == 'Payment' %}
+                      bg-red-100 text-red-700
+                    {% elif f.category == 'Measurements' %}
+                      bg-orange-100 text-orange-700
+                    {% else %}
+                      bg-gray-100 text-gray-600
+                    {% endif %}">
+                    {% set cat_icons = {
+                      'Tailoring':'🧵','Shop':'🛍️','Website':'💻',
+                      'Delivery':'🚚','Measurements':'📏',
+                      'Payment':'💰','General':'💬'
+                    } %}
+                    {{ cat_icons.get(f.category,'💬') }} {{ f.category }}
+                  </span>
+                </div>
+
+                <!-- Message -->
+                <p class="text-gray-600 text-sm leading-relaxed">
+                  {{ f.message }}
+                </p>
+
+                <!-- Date -->
+                <p class="text-gray-400 text-xs mt-2">
+                  <i class="fa-solid fa-clock text-xs mr-1"></i>
+                  {{ f.created_at.strftime('%d %b %Y at %I:%M %p') }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Admin delete button -->
+            {% if current_user.is_authenticated and current_user.is_admin() %}
+            <form method="POST"
+                  action="{{ url_for('feedback_bp.delete_feedback',
+                                     feedback_id=f.id) }}"
+                  onsubmit="return confirm('Delete this feedback?')">
+              <button type="submit"
+                class="w-8 h-8 rounded-lg bg-red-50 text-red-400
+                       hover:bg-red-100 flex items-center justify-center
+                       transition-colors flex-shrink-0">
+                <i class="fa-solid fa-trash text-xs"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <!-- Empty state -->
+      <div class="card p-16 text-center">
+        <i class="fa-solid fa-comments text-5xl text-gray-200 mb-4"></i>
+        <h3 class="text-kgreen font-semibold text-lg mb-2">
+          No feedback yet
+          {% if current_category != 'all' %}
+          in {{ current_category }}
+          {% endif %}
+        </h3>
+        <p class="text-gray-400 text-sm">
+          Be the first to share your thoughts!
+        </p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -6,14 +6,16 @@ from extensions import db
 from models.order_model import Order
 from models.measurement_model import Measurement
 from config import Config
+from utils.notifications import notify_order_placed, notify_order_status
 
 order = Blueprint('order', __name__)
 
-ALLOWED          = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-WHATSAPP_NUMBER  = '2347082815719'  # ← replace with real number
+ALLOWED         = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+WHATSAPP_NUMBER = '2348000000000'  # ← replace with real number
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED
+    return ('.' in filename and
+            filename.rsplit('.', 1)[1].lower() in ALLOWED)
 
 def build_whatsapp_url(message):
     return f"https://wa.me/{WHATSAPP_NUMBER}?text={urllib.parse.quote(message)}"
@@ -21,7 +23,9 @@ def build_whatsapp_url(message):
 @order.route('/place-order', methods=['GET', 'POST'])
 @login_required
 def place_order():
-    measurement = Measurement.query.filter_by(user_id=current_user.id).first()
+    measurement = Measurement.query.filter_by(
+        user_id=current_user.id).first()
+
     if request.method == 'POST':
         image_filename = None
         if 'design_image' in request.files:
@@ -45,6 +49,9 @@ def place_order():
         db.session.add(new_order)
         db.session.commit()
 
+        # notify admins
+        notify_order_placed(new_order)
+
         m   = measurement
         msg = (
             f"🧵 *NEW TAILORING ORDER — Kalamu Wahid*\n\n"
@@ -64,11 +71,12 @@ def place_order():
                 f"  Chest: {m.chest}\" | Shoulder: {m.shoulder}\"\n"
                 f"  Sleeve: {m.sleeve}\" | Waist: {m.waist}\"\n"
                 f"  Neck: {m.neck}\" | Hip: {m.hip}\"\n"
-                f"  Shirt Length: {m.shirt_length}\" | Trouser: {m.trouser_length}\"\n\n"
+                f"  Shirt Length: {m.shirt_length}\" | "
+                f"Trouser: {m.trouser_length}\"\n\n"
             )
-        msg += f"📌 *Notes:* {new_order.notes or 'None'}"
-
+        msg   += f"📌 *Notes:* {new_order.notes or 'None'}"
         wa_url = build_whatsapp_url(msg)
+
         flash('Order placed successfully!', 'success')
         return render_template('customer/order_confirm.html',
                                order=new_order,
@@ -77,7 +85,6 @@ def place_order():
     return render_template('customer/place_order.html',
                            measurement=measurement)
 
-
 @order.route('/my-orders')
 @login_required
 def my_orders():
@@ -85,7 +92,6 @@ def my_orders():
         user_id=current_user.id
     ).order_by(Order.created_at.desc()).all()
     return render_template('customer/my_orders.html', orders=orders)
-
 
 @order.route('/track-order/<int:order_id>')
 @login_required
