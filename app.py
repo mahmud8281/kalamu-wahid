@@ -138,5 +138,8 @@ def create_default_admin(app):
 
 application = create_app()
 
-if __name__ == '__main__':
-    application.run(debug=False, threaded=True)
+import os
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    application.run(host="0.0.0.0", port=port)
