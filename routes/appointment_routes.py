@@ -2,11 +2,13 @@ import urllib.parse
 from flask import (Blueprint, render_template, request,
                    flash, redirect, url_for)
 from flask_login import current_user, login_required
-from extensions import db
+from extensions import db, limiter
 from models.appointment_model import Appointment
 from utils.notifications import notify_appointment
+from utils.sanitize import clean
 
-appointment_bp = Blueprint('appointment_bp', __name__)
+appointment_bp  = Blueprint('appointment_bp', __name__)
+WHATSAPP_NUMBER = '2347082815719'
 
 SERVICES = [
     'Body Measurement Session',
@@ -23,21 +25,28 @@ TIME_SLOTS = [
     '04:00 PM', '05:00 PM',
 ]
 
-WHATSAPP_NUMBER = '2348000000000'  # ← replace with real number
-
 @appointment_bp.route('/appointment', methods=['GET', 'POST'])
+@limiter.limit('10 per hour')
 def book_appointment():
     if request.method == 'POST':
-        name         = request.form.get('name', '').strip()
-        phone        = request.form.get('phone', '').strip()
-        email        = request.form.get('email', '').strip()
-        date         = request.form.get('date', '').strip()
-        time         = request.form.get('time', '').strip()
-        service_type = request.form.get('service_type', '').strip()
-        notes        = request.form.get('notes', '').strip()
+        name         = clean(request.form.get('name', ''))
+        phone        = clean(request.form.get('phone', ''))
+        email        = clean(request.form.get('email', ''))
+        date         = clean(request.form.get('date', ''))
+        time         = clean(request.form.get('time', ''))
+        service_type = clean(request.form.get('service_type', ''))
+        notes        = clean(request.form.get('notes', ''))
 
         if not name or not phone or not date or not time or not service_type:
             flash('Please fill in all required fields.', 'danger')
+            return redirect(url_for('appointment_bp.book_appointment'))
+
+        if service_type not in SERVICES:
+            flash('Invalid service type selected.', 'danger')
+            return redirect(url_for('appointment_bp.book_appointment'))
+
+        if time not in TIME_SLOTS:
+            flash('Invalid time slot selected.', 'danger')
             return redirect(url_for('appointment_bp.book_appointment'))
 
         existing = Appointment.query.filter_by(
@@ -63,7 +72,6 @@ def book_appointment():
         db.session.add(a)
         db.session.commit()
 
-        # notify admins
         notify_appointment(a)
 
         msg = (
@@ -81,16 +89,16 @@ def book_appointment():
 
         flash('Appointment booked successfully!', 'success')
         return render_template('appointment/confirm.html',
-                               appointment=a,
-                               wa_url=wa_url)
+                               appointment = a,
+                               wa_url      = wa_url)
 
-    booked = Appointment.query.filter_by(status='Confirmed').all()
+    booked       = Appointment.query.filter_by(status='Confirmed').all()
     booked_slots = [{'date': b.date, 'time': b.time} for b in booked]
 
     return render_template('appointment/book.html',
-                           services=SERVICES,
-                           time_slots=TIME_SLOTS,
-                           booked_slots=booked_slots)
+                           services     = SERVICES,
+                           time_slots   = TIME_SLOTS,
+                           booked_slots = booked_slots)
 
 @appointment_bp.route('/my-appointments')
 @login_required
@@ -107,15 +115,15 @@ def admin_appointments():
     if not current_user.is_admin():
         flash('Admin access required.', 'danger')
         return redirect(url_for('auth.login'))
-    status = request.args.get('status', 'all')
+    status = request.args.get('status', 'all')[:20]
     query  = Appointment.query
     if status != 'all':
         query = query.filter_by(status=status)
     appointments = query.order_by(
         Appointment.date, Appointment.time).all()
     return render_template('appointment/admin_appointments.html',
-                           appointments=appointments,
-                           current_status=status)
+                           appointments   = appointments,
+                           current_status = status)
 
 @appointment_bp.route('/admin/appointments/update/<int:appt_id>',
                       methods=['POST'])
@@ -125,7 +133,7 @@ def update_appointment(appt_id):
         flash('Admin access required.', 'danger')
         return redirect(url_for('auth.login'))
     a        = Appointment.query.get_or_404(appt_id)
-    a.status = request.form.get('status')
+    a.status = clean(request.form.get('status', ''))
     db.session.commit()
     flash(f'Appointment #{appt_id} updated to {a.status}.', 'success')
     return redirect(url_for('appointment_bp.admin_appointments'))

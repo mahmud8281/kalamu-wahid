@@ -1,6 +1,6 @@
 from flask import Flask, send_from_directory
 from config import Config
-from extensions import db, login_manager
+from extensions import db, login_manager, limiter
 from datetime import datetime
 
 def create_app():
@@ -9,6 +9,7 @@ def create_app():
 
     db.init_app(app)
     login_manager.init_app(app)
+    limiter.init_app(app)
 
     from models.user_model         import User
     from models.measurement_model  import Measurement
@@ -27,6 +28,11 @@ def create_app():
 
     @app.route('/uploads/<filename>')
     def uploaded_file(filename):
+        import re
+        # only allow safe filenames — prevent path traversal
+        if not re.match(r'^[\w\-\.]+$', filename):
+            from flask import abort
+            abort(404)
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
     @app.context_processor
@@ -45,6 +51,36 @@ def create_app():
             'now':          datetime.now(),
             'unread_count': unread
         }
+
+    # ── Security headers on every response ──────────────────
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Content-Type-Options']  = 'nosniff'
+        response.headers['X-Frame-Options']         = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection']        = '1; mode=block'
+        response.headers['Referrer-Policy']         = 'strict-origin-when-cross-origin'
+        response.headers['Permissions-Policy']      = 'geolocation=(), microphone=()'
+        if not app.debug:
+            response.headers['Strict-Transport-Security'] = \
+                'max-age=31536000; includeSubDomains'
+        return response
+
+    # ── Rate limit error handler ─────────────────────────────
+    @app.errorhandler(429)
+    def rate_limit_handler(e):
+        from flask import render_template
+        return render_template('errors/429.html'), 429
+
+    # ── Generic error handlers ───────────────────────────────
+    @app.errorhandler(404)
+    def not_found(e):
+        from flask import render_template
+        return render_template('errors/404.html'), 404
+
+    @app.errorhandler(500)
+    def server_error(e):
+        from flask import render_template
+        return render_template('errors/500.html'), 500
 
     from routes.auth_routes         import auth
     from routes.customer_routes     import customer
@@ -80,17 +116,25 @@ def create_app():
 
 def create_default_admin(app):
     from models.user_model import User
+    import secrets
     with app.app_context():
         if not User.query.filter_by(role='admin').first():
+            strong_password = secrets.token_urlsafe(16)
             admin_user = User(
                 full_name = 'CEO Admin',
                 email     = 'admin@kalamu.com',
                 phone     = '07082815719',
                 role      = 'admin'
             )
-            admin_user.set_password('admin123')
+            admin_user.set_password(strong_password)
             db.session.add(admin_user)
             db.session.commit()
+            print('=' * 50)
+            print('ADMIN ACCOUNT CREATED')
+            print('Email:    admin@kalamu.com')
+            print(f'Password: {strong_password}')
+            print('SAVE THIS PASSWORD — it will not show again')
+            print('=' * 50)
 
 application = create_app()
 

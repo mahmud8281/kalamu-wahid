@@ -10,3 +10,5 @@ werkzeug
 sqlalchemy
 wtforms
 waitress
+flask-limiter
+bleach

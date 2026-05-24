@@ -1,19 +1,20 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import current_user
-from extensions import db
+from extensions import db, limiter
 from models.product_model import Product, ProductOrder
 from utils.notifications import notify_product_order
+from utils.sanitize import clean
 import urllib.parse
 
 shop = Blueprint('shop', __name__)
 
 CATEGORIES      = ['Shadda', 'Yadi', 'Caps', 'Ready-made', 'Embroidery']
-WHATSAPP_NUMBER = '2347082815719'  # ← replace with real number
+WHATSAPP_NUMBER = '2347082815719'
 
 @shop.route('/shop')
 def shop_home():
-    category = request.args.get('category', 'all')
-    search   = request.args.get('search', '').strip()
+    category = request.args.get('category', 'all')[:50]
+    search   = request.args.get('search', '').strip()[:100]
 
     query = Product.query.filter_by(in_stock=True)
     if category != 'all':
@@ -29,36 +30,42 @@ def shop_home():
         featured=True, in_stock=True).limit(4).all()
 
     return render_template('shop/shop.html',
-                           products=products,
-                           featured=featured,
-                           categories=CATEGORIES,
-                           current_category=category,
-                           search=search)
+                           products         = products,
+                           featured         = featured,
+                           categories       = CATEGORIES,
+                           current_category = category,
+                           search           = search)
 
 @shop.route('/shop/product/<int:product_id>')
 def product_detail(product_id):
     product = Product.query.get_or_404(product_id)
     related = Product.query.filter_by(
-        category=product.category,
-        in_stock=True
+        category = product.category,
+        in_stock = True
     ).filter(Product.id != product_id).limit(4).all()
     return render_template('shop/product_detail.html',
-                           product=product,
-                           related=related)
+                           product = product,
+                           related = related)
 
 @shop.route('/shop/request-order/<int:product_id>',
             methods=['GET', 'POST'])
+@limiter.limit('20 per hour')
 def request_order(product_id):
     product = Product.query.get_or_404(product_id)
 
     if request.method == 'POST':
-        name     = request.form.get('customer_name')
-        phone    = request.form.get('customer_phone')
+        name     = clean(request.form.get('customer_name', ''))
+        phone    = clean(request.form.get('customer_phone', ''))
         qty      = float(request.form.get('quantity') or 1)
-        delivery = request.form.get('delivery_method')
-        address  = request.form.get('delivery_address', '')
-        note     = request.form.get('note', '')
+        delivery = clean(request.form.get('delivery_method', ''))
+        address  = clean(request.form.get('delivery_address', ''))
+        note     = clean(request.form.get('note', ''))
         total    = qty * product.price if product.price else 0
+
+        if not name or not phone:
+            flash('Please fill in your name and phone number.', 'danger')
+            return redirect(url_for('shop.request_order',
+                                    product_id=product_id))
 
         o = ProductOrder(
             user_id          = current_user.id
@@ -77,7 +84,6 @@ def request_order(product_id):
         db.session.add(o)
         db.session.commit()
 
-        # notify admins
         notify_product_order(o)
 
         msg = (
@@ -99,13 +105,8 @@ def request_order(product_id):
 
         flash('Order request submitted successfully!', 'success')
         return render_template('shop/order_confirm.html',
-                               order=o,
-                               product=product,
-                               wa_url=wa_url)
+                               order   = o,
+                               product = product,
+                               wa_url  = wa_url)
 
-    return render_template('shop/request_order.html',
-                           product=product)
-
-@shop.route('/shop/cart')
-def cart():
-    return render_template('shop/cart.html')
+    return render_template('shop/request_order.html', product=product)

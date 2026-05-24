@@ -34,7 +34,9 @@ def notify_order_placed(order):
     """Notify all admins when a new tailoring order is placed."""
     notify_all_admins(
         title   = f'🧵 New Order #{order.id}',
-        message = f'{order.user.full_name} placed a new {order.style_type} order worth ₦{order.amount:,.0f}.',
+        message = (f'{order.user.full_name} placed a new '
+                   f'{order.style_type} order worth '
+                   f'₦{order.amount:,.0f}.'),
         type    = 'order',
         link    = '/admin/orders'
     )
@@ -42,10 +44,14 @@ def notify_order_placed(order):
 def notify_order_status(order):
     """Notify customer when their order status changes."""
     messages = {
-        'In Progress': f'Your Order #{order.id} ({order.style_type}) is now being sewn by our tailor.',
-        'Ready':       f'Great news! Your Order #{order.id} ({order.style_type}) is ready for collection.',
-        'Delivered':   f'Your Order #{order.id} ({order.style_type}) has been delivered. Thank you!',
-        'Pending':     f'Your Order #{order.id} ({order.style_type}) has been received and is pending.',
+        'In Progress': (f'Your Order #{order.id} ({order.style_type}) '
+                        f'is now being sewn by our tailor.'),
+        'Ready':       (f'Great news! Your Order #{order.id} '
+                        f'({order.style_type}) is ready for collection.'),
+        'Delivered':   (f'Your Order #{order.id} ({order.style_type}) '
+                        f'has been delivered. Thank you!'),
+        'Pending':     (f'Your Order #{order.id} ({order.style_type}) '
+                        f'has been received and is pending.'),
     }
     icons = {
         'In Progress': '🪡',
@@ -53,7 +59,10 @@ def notify_order_status(order):
         'Delivered':   '🚚',
         'Pending':     '⏳',
     }
-    msg  = messages.get(order.status, f'Your order #{order.id} status changed to {order.status}.')
+    msg  = messages.get(
+        order.status,
+        f'Your order #{order.id} status changed to {order.status}.'
+    )
     icon = icons.get(order.status, '📦')
     notify(
         user_id = order.user_id,
@@ -67,7 +76,9 @@ def notify_product_order(product_order):
     """Notify all admins when a new product order is placed."""
     notify_all_admins(
         title   = f'🛍️ New Product Order #{product_order.id}',
-        message = f'{product_order.customer_name} ordered {product_order.quantity} {product_order.unit}(s) of {product_order.product.name}.',
+        message = (f'{product_order.customer_name} ordered '
+                   f'{product_order.quantity} {product_order.unit}(s) '
+                   f'of {product_order.product.name}.'),
         type    = 'product',
         link    = '/admin/shop/orders'
     )
@@ -76,7 +87,9 @@ def notify_appointment(appointment):
     """Notify all admins when a new appointment is booked."""
     notify_all_admins(
         title   = f'📅 New Appointment #{appointment.id}',
-        message = f'{appointment.name} booked a {appointment.service_type} on {appointment.date} at {appointment.time}.',
+        message = (f'{appointment.name} booked a '
+                   f'{appointment.service_type} on '
+                   f'{appointment.date} at {appointment.time}.'),
         type    = 'appointment',
         link    = '/admin/appointments'
     )

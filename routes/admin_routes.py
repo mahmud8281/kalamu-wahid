@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
-from extensions import db
+from extensions import db, limiter
 from models.order_model import Order
 from models.user_model import User
 from models.measurement_model import Measurement
@@ -8,16 +8,17 @@ from models.gallery_model import GalleryImage
 from models.feedback_model import Feedback
 from models.notification_model import Notification
 from utils.notifications import notify_order_status
+from utils.sanitize import clean
+from utils.upload import safe_save
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func
-import os
 import urllib.parse
 from config import Config
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
-WHATSAPP_NUMBER = '2348000000000'  # ← replace with real number
+WHATSAPP_NUMBER = '2347082815719'
 
 def admin_required(f):
     @wraps(f)
@@ -78,42 +79,51 @@ def dashboard():
         Feedback.created_at.desc()).limit(5).all()
 
     return render_template('admin/dashboard.html',
-        orders=orders, customers=customers, staff=staff,
-        pending=pending, progress=progress,
-        ready=ready, delivered=delivered,
-        total_revenue=total_revenue,
-        total_paid=total_paid,
-        total_balance=total_balance,
-        monthly_data=monthly_data,
-        style_data=style_data,
-        total_feedback=total_feedback,
-        new_feedback=new_feedback)
+        orders         = orders,
+        customers      = customers,
+        staff          = staff,
+        pending        = pending,
+        progress       = progress,
+        ready          = ready,
+        delivered      = delivered,
+        total_revenue  = total_revenue,
+        total_paid     = total_paid,
+        total_balance  = total_balance,
+        monthly_data   = monthly_data,
+        style_data     = style_data,
+        total_feedback = total_feedback,
+        new_feedback   = new_feedback)
 
 @admin.route('/orders')
 @login_required
 @admin_required
 def orders():
-    status     = request.args.get('status', 'all')
+    status     = request.args.get('status', 'all')[:20]
     all_orders = Order.query.order_by(
         Order.created_at.desc()).all() \
         if status == 'all' else \
         Order.query.filter_by(status=status).order_by(
             Order.created_at.desc()).all()
     return render_template('admin/orders.html',
-                           orders=all_orders,
-                           current_status=status)
+                           orders         = all_orders,
+                           current_status = status)
 
 @admin.route('/update-status/<int:order_id>', methods=['POST'])
 @login_required
 @admin_required
 def update_status(order_id):
     o          = Order.query.get_or_404(order_id)
-    new_status = request.form.get('status')
+    new_status = clean(request.form.get('status', ''))
     old_status = o.status
-    o.status   = new_status
+
+    valid_statuses = ['Pending', 'In Progress', 'Ready', 'Delivered']
+    if new_status not in valid_statuses:
+        flash('Invalid status.', 'danger')
+        return redirect(url_for('admin.orders'))
+
+    o.status = new_status
     db.session.commit()
 
-    # notify customer only if status actually changed
     if new_status != old_status:
         notify_order_status(o)
 
@@ -124,8 +134,12 @@ def update_status(order_id):
 @login_required
 @admin_required
 def update_payment(order_id):
-    o             = Order.query.get_or_404(order_id)
-    o.amount_paid = float(request.form.get('amount_paid') or 0)
+    o = Order.query.get_or_404(order_id)
+    try:
+        o.amount_paid = float(request.form.get('amount_paid') or 0)
+    except ValueError:
+        flash('Invalid payment amount.', 'danger')
+        return redirect(url_for('admin.orders'))
     db.session.commit()
     flash(f'Payment updated for Order #{order_id}.', 'success')
     return redirect(request.referrer or url_for('admin.orders'))
@@ -158,9 +172,9 @@ def customer_detail(user_id):
         Order.created_at.desc()).all()
     measurement = Measurement.query.filter_by(user_id=user_id).first()
     return render_template('admin/customer_detail.html',
-                           customer=customer,
-                           orders=orders,
-                           measurement=measurement)
+                           customer    = customer,
+                           orders      = orders,
+                           measurement = measurement)
 
 @admin.route('/payments')
 @login_required
@@ -173,10 +187,10 @@ def payments():
         func.sum(Order.amount_paid)).scalar() or 0
     total_balance = total_revenue - total_paid
     return render_template('admin/payments.html',
-                           orders=all_orders,
-                           total_revenue=total_revenue,
-                           total_paid=total_paid,
-                           total_balance=total_balance)
+                           orders        = all_orders,
+                           total_revenue = total_revenue,
+                           total_paid    = total_paid,
+                           total_balance = total_balance)
 
 @admin.route('/gallery')
 @login_required
@@ -190,10 +204,9 @@ def gallery():
 @login_required
 @admin_required
 def upload_image():
-    ALLOWED  = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     files    = request.files.getlist('images')
-    title    = request.form.get('title', '')
-    category = request.form.get('category', 'General')
+    title    = clean(request.form.get('title', ''))
+    category = clean(request.form.get('category', 'General'))
     featured = request.form.get('featured') == 'on'
 
     if not files or all(f.filename == '' for f in files):
@@ -202,12 +215,10 @@ def upload_image():
 
     uploaded = 0
     rejected = 0
+
     for i, file in enumerate(files):
-        if file and '.' in file.filename and \
-           file.filename.rsplit('.', 1)[1].lower() in ALLOWED:
-            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-            filename  = f"gallery_{timestamp}_{i}_{file.filename}"
-            file.save(os.path.join(Config.UPLOAD_FOLDER, filename))
+        filename = safe_save(file, Config.UPLOAD_FOLDER, prefix='gallery')
+        if filename:
             img = GalleryImage(
                 title    = f"{title} {i+1}".strip()
                            if len(files) > 1 else title,
@@ -224,13 +235,15 @@ def upload_image():
     if uploaded:
         flash(f'{uploaded} image(s) uploaded.', 'success')
     if rejected:
-        flash(f'{rejected} file(s) rejected.', 'danger')
+        flash(f'{rejected} file(s) rejected — invalid or unsafe format.',
+              'danger')
     return redirect(url_for('admin.gallery'))
 
 @admin.route('/gallery/delete/<int:image_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_image(image_id):
+    import os
     img      = GalleryImage.query.get_or_404(image_id)
     filepath = os.path.join(Config.UPLOAD_FOLDER, img.filename)
     if os.path.exists(filepath):
@@ -251,17 +264,21 @@ def staff():
 @login_required
 @ceo_required
 def add_staff():
-    if User.query.filter_by(
-            email=request.form.get('email')).first():
+    email = clean(request.form.get('email', '')).lower()
+    if User.query.filter_by(email=email).first():
         flash('Email already exists.', 'danger')
         return redirect(url_for('admin.staff'))
     s = User(
-        full_name = request.form.get('full_name'),
-        email     = request.form.get('email'),
-        phone     = request.form.get('phone'),
+        full_name = clean(request.form.get('full_name', '')),
+        email     = email,
+        phone     = clean(request.form.get('phone', '')),
         role      = 'staff'
     )
-    s.set_password(request.form.get('password'))
+    password = request.form.get('password', '')
+    if len(password) < 6:
+        flash('Password must be at least 6 characters.', 'danger')
+        return redirect(url_for('admin.staff'))
+    s.set_password(password)
     db.session.add(s)
     db.session.commit()
     flash('Staff account created.', 'success')
@@ -297,9 +314,8 @@ def whatsapp_customer(user_id):
     msg += "Thank you for choosing Kalamu Wahid Tailoring Synergy. 🧵"
 
     number = customer.phone.replace(
-        '+','').replace(' ','').replace('-','')
+        '+', '').replace(' ', '').replace('-', '')
     if number.startswith('0'):
         number = '234' + number[1:]
-    wa_url = (f"https://wa.me/{number}?"
-              f"text={urllib.parse.quote(msg)}")
+    wa_url = f"https://wa.me/{number}?text={urllib.parse.quote(msg)}"
     return redirect(wa_url)
