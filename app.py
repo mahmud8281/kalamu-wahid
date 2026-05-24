@@ -111,33 +111,26 @@ def create_app():
 
 # ---------------- RUN APP ----------------
 
-application = create_app()
-
-
 def create_admin():
-    from models.user_model import User
-    from extensions import db
+    try:
+        from models.user_model import User
+        from extensions import db
+        from werkzeug.security import generate_password_hash
 
-    admin_email = "admin@kalamu.com"
-    admin_password = "Muhammad9891@"
+        admin_email = "admin@kalamu.com"
+        admin_password = "Muhammad9891@"
 
-    existing = User.query.filter_by(email=admin_email).first()
+        existing = User.query.filter_by(email=admin_email).first()
 
-    if not existing:
-        admin = User(
-            email=admin_email,
-            password=generate_password_hash(admin_password),
-            role="admin"
-        )
-        db.session.add(admin)
-        db.session.commit()
-        print("ADMIN CREATED")
+        if not existing:
+            admin = User(
+                email=admin_email,
+                password=generate_password_hash(admin_password),
+                role="admin"
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("ADMIN CREATED")
 
-
-with application.app_context():
-    create_admin()
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    application.run(host="0.0.0.0", port=port)
+    except Exception as e:
+        print("ADMIN CREATION FAILED:", e)
