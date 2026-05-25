@@ -137,3 +137,14 @@ def create_admin():
 
     except Exception as e:
         print("ADMIN CREATION FAILED:", e)
+
+
+# SAFE STARTUP (IMPORTANT)
+with application.app_context():
+    create_admin()
+
+
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    application.run(host="0.0.0.0", port=port)
