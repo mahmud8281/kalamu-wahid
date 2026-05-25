@@ -142,7 +142,15 @@ def create_admin():
 # SAFE STARTUP (IMPORTANT)
 with application.app_context():
     create_admin()
+@application.route("/debug-admin")
+def debug_admin():
+    from models.user_model import User
 
+    admin = User.query.filter_by(email="admin@kalamu.com").first()
+
+    if admin:
+        return f"FOUND: {admin.email}"
+    return "NOT FOUND"
 
 if __name__ == "__main__":
     import os
