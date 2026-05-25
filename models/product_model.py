@@ -10,7 +10,8 @@ class Product(db.Model):
     price       = db.Column(db.Float, default=0.0)
     unit        = db.Column(db.String(50), default='piece')
     in_stock    = db.Column(db.Boolean, default=True)
-    image       = db.Column(db.String(200))
+    image       = db.Column(db.String(500))
+    public_id   = db.Column(db.String(200))
     featured    = db.Column(db.Boolean, default=False)
     created_at  = db.Column(db.DateTime, server_default=db.func.now())
 

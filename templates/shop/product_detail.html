@@ -16,12 +16,14 @@
     <!-- Image -->
     <div class="aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-kgreen/5 to-gold/5 shadow-lg">
       {% if product.image %}
-      <img src="/uploads/{{ product.image }}" alt="{{ product.name }}" class="w-full h-full object-cover"/>
-      {% else %}
-      <div class="w-full h-full flex items-center justify-center">
-        <i class="fa-solid fa-shirt text-8xl text-kgreen/20"></i>
-      </div>
-      {% endif %}
+<img src="{{ product.image if product.image.startswith('http') else '/uploads/' + product.image }}"
+     alt="{{ product.name }}"
+     class="w-full h-full object-cover"/>
+{% else %}
+<div class="w-full h-full flex items-center justify-center">
+  <i class="fa-solid fa-shirt text-8xl text-kgreen/20"></i>
+</div>
+{% endif %}
     </div>
 
     <!-- Details -->
@@ -95,9 +97,10 @@
       <a href="{{ url_for('shop.product_detail', product_id=r.id) }}" class="card overflow-hidden group">
         <div class="aspect-square bg-kgreen/5 overflow-hidden">
           {% if r.image %}
-          <img src="/uploads/{{ r.image }}" alt="{{ r.name }}"
-               class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>
-          {% else %}
+<img src="{{ r.image if r.image.startswith('http') else '/uploads/' + r.image }}"
+     alt="{{ r.name }}"
+     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>
+{% else %}
           <div class="w-full h-full flex items-center justify-center">
             <i class="fa-solid fa-shirt text-3xl text-kgreen/20"></i>
           </div>

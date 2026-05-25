@@ -22,8 +22,13 @@ class Config:
     }
 
     # ── Uploads ───────────────────────────────────────────────
-    UPLOAD_FOLDER = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), 'uploads')
+    # Use /tmp on Render (writable), local uploads folder otherwise
+    if os.environ.get('RENDER'):
+        UPLOAD_FOLDER = '/tmp/uploads'
+    else:
+        UPLOAD_FOLDER = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'uploads')
+
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 

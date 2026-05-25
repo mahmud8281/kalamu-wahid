@@ -68,9 +68,16 @@
 <section id="gallery" class="py-20 bg-kgreen/5 px-4">
   <div class="max-w-7xl mx-auto">
     <div class="text-center mb-12">
-      <p class="text-gold font-semibold text-sm tracking-widest uppercase mb-2">Our Work</p>
-      <h2 class="section-title text-4xl font-bold">Fashion Gallery</h2>
-      <p class="text-gray-500 text-sm mt-3 max-w-xl mx-auto">Explore our finest Hausa tailoring works — from grand Agbada to refined Senator styles.</p>
+      <p class="text-gold font-semibold text-sm tracking-widest uppercase mb-2">
+        Our Work
+      </p>
+      <h2 class="section-title text-4xl font-bold" data-t="gallery_title">
+        Fashion Gallery
+      </h2>
+      <p class="text-gray-500 text-sm mt-3 max-w-xl mx-auto">
+        Explore our finest Hausa tailoring works — from grand Agbada
+        to refined Senator styles.
+      </p>
     </div>
 
     {% if gallery %}
@@ -78,41 +85,64 @@
     <!-- Category filter tabs -->
     <div class="flex gap-2 justify-center flex-wrap mb-8">
       <button onclick="filterGallery('all')" id="tab-all"
-        class="gallery-tab active-tab px-5 py-2 rounded-full text-sm font-medium transition-all bg-kgreen text-gold">
+        class="gallery-tab active-tab px-5 py-2 rounded-full text-sm
+               font-medium transition-all bg-kgreen text-gold">
         All
       </button>
-      {% set categories = gallery | map(attribute='category') | unique | list %}
+      {% set categories = gallery | map(attribute='category')
+                                  | unique | list %}
       {% for cat in categories %}
-      <button onclick="filterGallery('{{ cat }}')" id="tab-{{ cat | replace(' ','-') }}"
-        class="gallery-tab px-5 py-2 rounded-full text-sm font-medium transition-all bg-white text-gray-500 hover:bg-kgreen/10 border border-gray-100">
+      <button onclick="filterGallery('{{ cat }}')"
+              id="tab-{{ cat | replace(' ','-') }}"
+        class="gallery-tab px-5 py-2 rounded-full text-sm font-medium
+               transition-all bg-white text-gray-500
+               hover:bg-kgreen/10 border border-gray-100">
         {{ cat }}
       </button>
       {% endfor %}
     </div>
 
     <!-- Gallery grid -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="gallery-grid">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+         id="gallery-grid">
       {% for img in gallery %}
-      <div class="gallery-item aspect-square rounded-2xl overflow-hidden group relative cursor-pointer shadow-sm hover:shadow-xl transition-all"
+      <div class="gallery-item aspect-square rounded-2xl overflow-hidden
+                  group relative cursor-pointer shadow-sm
+                  hover:shadow-xl transition-all"
            data-category="{{ img.category }}"
-           onclick="openLightbox('{{ img.filename }}', '{{ img.title or img.category }}', '{{ img.category }}')">
-        <img src="/uploads/{{ img.filename }}"
+           onclick="openLightbox(
+             '{{ img.filename if img.filename and img.filename.startswith('http') else '/uploads/' + img.filename }}',
+             '{{ img.title or img.category }}',
+             '{{ img.category }}'
+           )">
+        <img src="{{ img.filename if img.filename and
+                     img.filename.startswith('http')
+                     else '/uploads/' + img.filename }}"
              alt="{{ img.title or img.category }}"
-             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"/>
+             class="w-full h-full object-cover
+                    group-hover:scale-110 transition-transform duration-500"/>
         <!-- Overlay -->
-        <div class="absolute inset-0 bg-gradient-to-t from-kgreen/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end p-4">
+        <div class="absolute inset-0 bg-gradient-to-t
+                    from-kgreen/80 via-transparent to-transparent
+                    opacity-0 group-hover:opacity-100
+                    transition-all duration-300 flex items-end p-4">
           <div>
             {% if img.featured %}
-            <span class="text-xs bg-gold text-kgreen font-bold px-2 py-0.5 rounded-full mb-2 inline-block">Featured</span>
+            <span class="text-xs bg-gold text-kgreen font-bold
+                         px-2 py-0.5 rounded-full mb-2 inline-block">
+              Featured
+            </span>
             {% endif %}
-            <p class="text-white font-semibold text-sm">{{ img.title or img.category }}</p>
+            <p class="text-white font-semibold text-sm">
+              {{ img.title or img.category }}
+            </p>
             <p class="text-gold text-xs">{{ img.category }}</p>
           </div>
         </div>
-        <!-- Featured badge top -->
         {% if img.featured %}
         <div class="absolute top-3 left-3">
-          <span class="text-xs bg-gold text-kgreen font-bold px-2 py-1 rounded-full shadow-md">
+          <span class="text-xs bg-gold text-kgreen font-bold
+                       px-2 py-1 rounded-full shadow-md">
             <i class="fa-solid fa-star text-xs mr-1"></i>Featured
           </span>
         </div>
@@ -122,16 +152,22 @@
     </div>
 
     <!-- Lightbox -->
-    <div id="lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/90 p-4"
+    <div id="lightbox"
+         class="fixed inset-0 z-50 hidden items-center justify-center
+                bg-black/90 p-4"
          onclick="closeLightbox(event)">
       <div class="relative max-w-4xl w-full">
-        <button onclick="closeLightbox()" class="absolute -top-12 right-0 text-white/70 hover:text-white text-sm flex items-center gap-2">
+        <button onclick="closeLightbox()"
+                class="absolute -top-12 right-0 text-white/70
+                       hover:text-white text-sm flex items-center gap-2">
           <i class="fa-solid fa-xmark text-xl"></i> Close
         </button>
         <img id="lightbox-img" src="" alt=""
-             class="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl"/>
+             class="w-full max-h-[80vh] object-contain
+                    rounded-2xl shadow-2xl"/>
         <div class="mt-3 text-center">
-          <p id="lightbox-title" class="text-white font-semibold text-lg"></p>
+          <p id="lightbox-title"
+             class="text-white font-semibold text-lg"></p>
           <p id="lightbox-category" class="text-gold text-sm"></p>
         </div>
       </div>
@@ -140,12 +176,17 @@
     {% else %}
     <!-- Empty state -->
     <div class="text-center py-20">
-      <div class="w-20 h-20 rounded-full bg-kgreen/5 flex items-center justify-center mx-auto mb-4">
+      <div class="w-20 h-20 rounded-full bg-kgreen/5 flex items-center
+                  justify-center mx-auto mb-4">
         <i class="fa-solid fa-images text-4xl text-kgreen/20"></i>
       </div>
-      <p class="text-gray-400">Gallery coming soon — check back shortly.</p>
+      <p class="text-gray-400">
+        Gallery coming soon — check back shortly.
+      </p>
       {% if current_user.is_authenticated and current_user.is_admin() %}
-      <a href="{{ url_for('admin.gallery') }}" class="btn-gold px-6 py-3 rounded-xl inline-block mt-4 text-sm shadow-lg">
+      <a href="{{ url_for('admin.gallery') }}"
+         class="btn-gold px-6 py-3 rounded-xl inline-block mt-4
+                text-sm shadow-lg">
         <i class="fa-solid fa-upload mr-2"></i> Upload First Image
       </a>
       {% endif %}

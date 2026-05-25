@@ -11,8 +11,10 @@
   <div class="card p-4 flex items-center gap-4 mb-6">
     <div class="w-16 h-16 rounded-xl overflow-hidden bg-kgreen/5 flex-shrink-0">
       {% if product.image %}
-      <img src="/uploads/{{ product.image }}" alt="{{ product.name }}" class="w-full h-full object-cover"/>
-      {% else %}
+<img src="{{ product.image if product.image.startswith('http') else '/uploads/' + product.image }}"
+     alt="{{ product.name }}"
+     class="w-full h-full object-cover"/>
+{% else %}
       <div class="w-full h-full flex items-center justify-center">
         <i class="fa-solid fa-shirt text-2xl text-kgreen/20"></i>
       </div>

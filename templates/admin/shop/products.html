@@ -110,9 +110,10 @@
     <div class="card p-4 flex items-center gap-4">
       <div class="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0">
         {% if p.image %}
-        <img src="/uploads/{{ p.image }}" alt="{{ p.name }}"
-             class="w-full h-full object-cover"/>
-        {% else %}
+<img src="{{ p.image if p.image.startswith('http') else '/uploads/' + p.image }}"
+     alt="{{ p.name }}"
+     class="w-full h-full object-cover"/>
+{% else %}
         <div class="w-full h-full flex items-center justify-center">
           <i class="fa-solid fa-shirt text-2xl text-gray-300"></i>
         </div>

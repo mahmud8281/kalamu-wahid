@@ -37,50 +37,73 @@ def products():
 @login_required
 @admin_required
 def add_product():
-    files    = request.files.getlist('images')
-    name     = request.form.get('name')
-    category = request.form.get('category')
-    price    = float(request.form.get('price') or 0)
-    unit     = request.form.get('unit', 'piece')
-    desc     = request.form.get('description', '')
-    featured = request.form.get('featured') == 'on'
-    in_stock = request.form.get('in_stock') == 'on'
+    files     = request.files.getlist('images')
+    name      = clean(request.form.get('name', ''))
+    category  = clean(request.form.get('category', ''))
+    price     = float(request.form.get('price') or 0)
+    unit      = request.form.get('unit', 'piece')
+    desc      = clean(request.form.get('description', ''))
+    featured  = request.form.get('featured') == 'on'
+    in_stock  = request.form.get('in_stock') == 'on'
+    stock_qty = int(request.form.get('stock_qty') or 0)
 
     if not files or all(f.filename == '' for f in files):
         flash('Please select at least one image.', 'danger')
         return redirect(url_for('admin_shop.products'))
 
+    use_cloudinary = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
     uploaded = 0
     rejected = 0
 
     for i, file in enumerate(files):
-        if file and '.' in file.filename and \
-           file.filename.rsplit('.', 1)[1].lower() in ALLOWED:
-            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-            filename  = f"product_{timestamp}_{i}_{file.filename}"
-            file.save(os.path.join(Config.UPLOAD_FOLDER, filename))
-            p = Product(
-                name        = name,
-                description = desc,
-                category    = category,
-                price       = price,
-                unit        = unit,
-                in_stock    = in_stock,
-                featured    = featured if i == 0 else False,
-                image       = filename
-            )
-            db.session.add(p)
-            uploaded += 1
+        if not file or file.filename == '':
+            continue
+
+        if use_cloudinary:
+            from utils.cloudinary_upload import upload_image as cloud_upload
+            url, public_id = cloud_upload(file, folder='kalamu_wahid/products')
+            if url:
+                p = Product(
+                    name        = name,
+                    description = desc,
+                    category    = category,
+                    price       = price,
+                    unit        = unit,
+                    in_stock    = in_stock,
+                    stock_qty   = stock_qty,
+                    featured    = featured if i == 0 else False,
+                    image       = url,
+                    public_id   = public_id
+                )
+                db.session.add(p)
+                uploaded += 1
+            else:
+                rejected += 1
         else:
-            rejected += 1
+            from utils.upload import safe_save
+            filename = safe_save(file, Config.UPLOAD_FOLDER, prefix='product')
+            if filename:
+                p = Product(
+                    name        = name,
+                    description = desc,
+                    category    = category,
+                    price       = price,
+                    unit        = unit,
+                    in_stock    = in_stock,
+                    stock_qty   = stock_qty,
+                    featured    = featured if i == 0 else False,
+                    image       = filename
+                )
+                db.session.add(p)
+                uploaded += 1
+            else:
+                rejected += 1
 
     db.session.commit()
-
     if uploaded:
-        flash(f'{uploaded} product image{"s" if uploaded > 1 else ""} added under "{name}".', 'success')
+        flash(f'{uploaded} product(s) added under "{name}".', 'success')
     if rejected:
-        flash(f'{rejected} file{"s" if rejected > 1 else ""} rejected — invalid format.', 'danger')
-
+        flash(f'{rejected} file(s) rejected.', 'danger')
     return redirect(url_for('admin_shop.products'))
 
 @admin_shop.route('/edit/<int:product_id>', methods=['POST'])

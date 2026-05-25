@@ -216,43 +216,69 @@ def upload_image():
     uploaded = 0
     rejected = 0
 
+    # check if Cloudinary is configured
+    use_cloudinary = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
+
     for i, file in enumerate(files):
-        filename = safe_save(file, Config.UPLOAD_FOLDER, prefix='gallery')
-        if filename:
-            img = GalleryImage(
-                title    = f"{title} {i+1}".strip()
-                           if len(files) > 1 else title,
-                category = category,
-                filename = filename,
-                featured = featured if i == 0 else False
-            )
-            db.session.add(img)
-            uploaded += 1
+        if not file or file.filename == '':
+            continue
+
+        if use_cloudinary:
+            from utils.cloudinary_upload import upload_image as cloud_upload
+            url, public_id = cloud_upload(file, folder='kalamu_wahid/gallery')
+            if url:
+                img = GalleryImage(
+                    title     = f"{title} {i+1}".strip() if len(files) > 1 else title,
+                    category  = category,
+                    filename  = url,
+                    public_id = public_id,
+                    featured  = featured if i == 0 else False
+                )
+                db.session.add(img)
+                uploaded += 1
+            else:
+                rejected += 1
         else:
-            rejected += 1
+            filename = safe_save(file, Config.UPLOAD_FOLDER, prefix='gallery')
+            if filename:
+                img = GalleryImage(
+                    title    = f"{title} {i+1}".strip() if len(files) > 1 else title,
+                    category = category,
+                    filename = filename,
+                    featured = featured if i == 0 else False
+                )
+                db.session.add(img)
+                uploaded += 1
+            else:
+                rejected += 1
 
     db.session.commit()
     if uploaded:
-        flash(f'{uploaded} image(s) uploaded.', 'success')
+        flash(f'{uploaded} image(s) uploaded successfully.', 'success')
     if rejected:
-        flash(f'{rejected} file(s) rejected — invalid or unsafe format.',
-              'danger')
+        flash(f'{rejected} file(s) rejected.', 'danger')
     return redirect(url_for('admin.gallery'))
 
 @admin.route('/gallery/delete/<int:image_id>', methods=['POST'])
 @login_required
 @admin_required
 def delete_image(image_id):
-    import os
-    img      = GalleryImage.query.get_or_404(image_id)
-    filepath = os.path.join(Config.UPLOAD_FOLDER, img.filename)
-    if os.path.exists(filepath):
-        os.remove(filepath)
+    img = GalleryImage.query.get_or_404(image_id)
+
+    # delete from Cloudinary if public_id exists
+    if img.public_id:
+        from utils.cloudinary_upload import delete_image as cloud_delete
+        cloud_delete(img.public_id)
+    else:
+        # delete local file
+        filepath = os.path.join(Config.UPLOAD_FOLDER, img.filename)
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
     db.session.delete(img)
     db.session.commit()
     flash('Image deleted.', 'success')
     return redirect(url_for('admin.gallery'))
-
 @admin.route('/staff')
 @login_required
 @ceo_required
