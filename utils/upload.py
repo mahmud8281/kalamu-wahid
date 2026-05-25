@@ -1,16 +1,18 @@
 import os
 import uuid
-import imghdr
 from werkzeug.utils import secure_filename
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-ALLOWED_MIMETYPES  = {'png', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    return (
+        '.' in filename and
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    )
 
 def safe_save(file, upload_folder, prefix='upload'):
     """
-    Validate file is truly an image using magic bytes,
-    rename to random UUID to prevent path traversal,
-    and save safely.
+    Validate and save an uploaded image file safely.
     Returns new filename or None if invalid.
     """
     if not file or not file.filename:
@@ -24,16 +26,12 @@ def safe_save(file, upload_folder, prefix='upload'):
     if ext not in ALLOWED_EXTENSIONS:
         return None
 
-    # read magic bytes to verify real file type
-    file_bytes = file.read(512)
-    file.seek(0)
-
-    real_type = imghdr.what(None, h=file_bytes)
-    if real_type not in ALLOWED_MIMETYPES:
-        return None
-
     # generate random safe filename
     filename = f"{prefix}_{uuid.uuid4().hex}.{ext}"
+
+    # make sure folder exists
+    os.makedirs(upload_folder, exist_ok=True)
+
     filepath = os.path.join(upload_folder, filename)
     file.save(filepath)
     return filename
