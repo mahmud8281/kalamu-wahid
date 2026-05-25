@@ -213,44 +213,53 @@ def upload_image():
         flash('Please select at least one image.', 'danger')
         return redirect(url_for('admin.gallery'))
 
+    from utils.cloudinary_upload import (is_cloudinary_configured,
+                                         upload_image as cloud_upload)
+    from utils.upload import safe_save
+
+    use_cloudinary = is_cloudinary_configured()
     uploaded = 0
     rejected = 0
-
-    # check if Cloudinary is configured
-    use_cloudinary = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
 
     for i, file in enumerate(files):
         if not file or file.filename == '':
             continue
 
-        if use_cloudinary:
-            from utils.cloudinary_upload import upload_image as cloud_upload
-            url, public_id = cloud_upload(file, folder='kalamu_wahid/gallery')
-            if url:
-                img = GalleryImage(
-                    title     = f"{title} {i+1}".strip() if len(files) > 1 else title,
-                    category  = category,
-                    filename  = url,
-                    public_id = public_id,
-                    featured  = featured if i == 0 else False
-                )
-                db.session.add(img)
-                uploaded += 1
+        try:
+            if use_cloudinary:
+                url, public_id = cloud_upload(
+                    file, folder='kalamu_wahid/gallery')
+                if url:
+                    img = GalleryImage(
+                        title     = f"{title} {i+1}".strip()
+                                    if len(files) > 1 else title,
+                        category  = category,
+                        filename  = url,
+                        public_id = public_id,
+                        featured  = featured if i == 0 else False
+                    )
+                    db.session.add(img)
+                    uploaded += 1
+                else:
+                    rejected += 1
             else:
-                rejected += 1
-        else:
-            filename = safe_save(file, Config.UPLOAD_FOLDER, prefix='gallery')
-            if filename:
-                img = GalleryImage(
-                    title    = f"{title} {i+1}".strip() if len(files) > 1 else title,
-                    category = category,
-                    filename = filename,
-                    featured = featured if i == 0 else False
-                )
-                db.session.add(img)
-                uploaded += 1
-            else:
-                rejected += 1
+                filename = safe_save(
+                    file, Config.UPLOAD_FOLDER, prefix='gallery')
+                if filename:
+                    img = GalleryImage(
+                        title    = f"{title} {i+1}".strip()
+                                   if len(files) > 1 else title,
+                        category = category,
+                        filename = filename,
+                        featured = featured if i == 0 else False
+                    )
+                    db.session.add(img)
+                    uploaded += 1
+                else:
+                    rejected += 1
+        except Exception as e:
+            print(f'Upload error for file {i}: {e}')
+            rejected += 1
 
     db.session.commit()
     if uploaded:

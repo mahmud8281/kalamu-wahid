@@ -33,25 +33,24 @@ def products():
                            products=all_products,
                            categories=CATEGORIES)
 
-@admin_shop.route('/add', methods=['POST'])
+@admin.route('/gallery/upload', methods=['POST'])
 @login_required
 @admin_required
-def add_product():
-    files     = request.files.getlist('images')
-    name      = clean(request.form.get('name', ''))
-    category  = clean(request.form.get('category', ''))
-    price     = float(request.form.get('price') or 0)
-    unit      = request.form.get('unit', 'piece')
-    desc      = clean(request.form.get('description', ''))
-    featured  = request.form.get('featured') == 'on'
-    in_stock  = request.form.get('in_stock') == 'on'
-    stock_qty = int(request.form.get('stock_qty') or 0)
+def upload_image():
+    files    = request.files.getlist('images')
+    title    = clean(request.form.get('title', ''))
+    category = clean(request.form.get('category', 'General'))
+    featured = request.form.get('featured') == 'on'
 
     if not files or all(f.filename == '' for f in files):
         flash('Please select at least one image.', 'danger')
-        return redirect(url_for('admin_shop.products'))
+        return redirect(url_for('admin.gallery'))
 
-    use_cloudinary = bool(os.environ.get('CLOUDINARY_CLOUD_NAME'))
+    from utils.cloudinary_upload import (is_cloudinary_configured,
+                                         upload_image as cloud_upload)
+    from utils.upload import safe_save
+
+    use_cloudinary = is_cloudinary_configured()
     uploaded = 0
     rejected = 0
 
@@ -59,53 +58,48 @@ def add_product():
         if not file or file.filename == '':
             continue
 
-        if use_cloudinary:
-            from utils.cloudinary_upload import upload_image as cloud_upload
-            url, public_id = cloud_upload(file, folder='kalamu_wahid/products')
-            if url:
-                p = Product(
-                    name        = name,
-                    description = desc,
-                    category    = category,
-                    price       = price,
-                    unit        = unit,
-                    in_stock    = in_stock,
-                    stock_qty   = stock_qty,
-                    featured    = featured if i == 0 else False,
-                    image       = url,
-                    public_id   = public_id
-                )
-                db.session.add(p)
-                uploaded += 1
+        try:
+            if use_cloudinary:
+                url, public_id = cloud_upload(
+                    file, folder='kalamu_wahid/gallery')
+                if url:
+                    img = GalleryImage(
+                        title     = f"{title} {i+1}".strip()
+                                    if len(files) > 1 else title,
+                        category  = category,
+                        filename  = url,
+                        public_id = public_id,
+                        featured  = featured if i == 0 else False
+                    )
+                    db.session.add(img)
+                    uploaded += 1
+                else:
+                    rejected += 1
             else:
-                rejected += 1
-        else:
-            from utils.upload import safe_save
-            filename = safe_save(file, Config.UPLOAD_FOLDER, prefix='product')
-            if filename:
-                p = Product(
-                    name        = name,
-                    description = desc,
-                    category    = category,
-                    price       = price,
-                    unit        = unit,
-                    in_stock    = in_stock,
-                    stock_qty   = stock_qty,
-                    featured    = featured if i == 0 else False,
-                    image       = filename
-                )
-                db.session.add(p)
-                uploaded += 1
-            else:
-                rejected += 1
+                filename = safe_save(
+                    file, Config.UPLOAD_FOLDER, prefix='gallery')
+                if filename:
+                    img = GalleryImage(
+                        title    = f"{title} {i+1}".strip()
+                                   if len(files) > 1 else title,
+                        category = category,
+                        filename = filename,
+                        featured = featured if i == 0 else False
+                    )
+                    db.session.add(img)
+                    uploaded += 1
+                else:
+                    rejected += 1
+        except Exception as e:
+            print(f'Upload error for file {i}: {e}')
+            rejected += 1
 
     db.session.commit()
     if uploaded:
-        flash(f'{uploaded} product(s) added under "{name}".', 'success')
+        flash(f'{uploaded} image(s) uploaded successfully.', 'success')
     if rejected:
         flash(f'{rejected} file(s) rejected.', 'danger')
-    return redirect(url_for('admin_shop.products'))
-
+    return redirect(url_for('admin.gallery'))
 @admin_shop.route('/edit/<int:product_id>', methods=['POST'])
 @login_required
 @admin_required

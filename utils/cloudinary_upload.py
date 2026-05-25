@@ -1,8 +1,14 @@
 import os
-import cloudinary
-import cloudinary.uploader
+
+def is_cloudinary_configured():
+    return bool(
+        os.environ.get('CLOUDINARY_CLOUD_NAME') and
+        os.environ.get('CLOUDINARY_API_KEY') and
+        os.environ.get('CLOUDINARY_API_SECRET')
+    )
 
 def configure_cloudinary():
+    import cloudinary
     cloudinary.config(
         cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME'),
         api_key    = os.environ.get('CLOUDINARY_API_KEY'),
@@ -11,11 +17,8 @@ def configure_cloudinary():
     )
 
 def upload_image(file, folder='kalamu_wahid'):
-    """
-    Upload a file to Cloudinary and return the secure URL.
-    Returns (url, public_id) or (None, None) if failed.
-    """
     try:
+        import cloudinary.uploader
         configure_cloudinary()
         result = cloudinary.uploader.upload(
             file,
@@ -32,8 +35,8 @@ def upload_image(file, folder='kalamu_wahid'):
         return None, None
 
 def delete_image(public_id):
-    """Delete an image from Cloudinary by public_id."""
     try:
+        import cloudinary.uploader
         configure_cloudinary()
         cloudinary.uploader.destroy(public_id)
         return True
