@@ -3,7 +3,6 @@ from config import Config
 from extensions import db, login_manager, limiter
 from datetime import datetime
 import os
-from werkzeug.security import generate_password_hash
 
 
 def create_app():
@@ -14,13 +13,15 @@ def create_app():
     login_manager.init_app(app)
     limiter.init_app(app)
 
-    from models.user_model import User
-    from models.measurement_model import Measurement
-    from models.order_model import Order
-    from models.gallery_model import GalleryImage
-    from models.product_model import Product, ProductOrder, WalkInCustomer, WalkInMeasurement
-    from models.feedback_model import Feedback
-    from models.appointment_model import Appointment
+    from models.user_model         import User
+    from models.measurement_model  import Measurement
+    from models.order_model        import Order
+    from models.gallery_model      import GalleryImage
+    from models.product_model      import (Product, ProductOrder,
+                                           WalkInCustomer,
+                                           WalkInMeasurement)
+    from models.feedback_model     import Feedback
+    from models.appointment_model  import Appointment
     from models.notification_model import Notification
 
     @login_manager.user_loader
@@ -41,26 +42,26 @@ def create_app():
             from flask_login import current_user
             if current_user.is_authenticated:
                 unread = Notification.query.filter_by(
-                    user_id=current_user.id,
-                    is_read=False
+                    user_id = current_user.id,
+                    is_read = False
                 ).count()
-        except:
+        except Exception:
             unread = 0
-
         return {
-            'now': datetime.now(),
+            'now':          datetime.now(),
             'unread_count': unread
         }
 
     @app.after_request
     def set_security_headers(response):
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-        response.headers['X-XSS-Protection'] = '1; mode=block'
-        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-        response.headers['Permissions-Policy'] = 'geolocation=(), microphone=()'
+        response.headers['X-Content-Type-Options']  = 'nosniff'
+        response.headers['X-Frame-Options']         = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection']        = '1; mode=block'
+        response.headers['Referrer-Policy']         = 'strict-origin-when-cross-origin'
+        response.headers['Permissions-Policy']      = 'geolocation=(), microphone=()'
         if not app.debug:
-            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+            response.headers['Strict-Transport-Security'] = \
+                'max-age=31536000; includeSubDomains'
         return response
 
     @app.errorhandler(404)
@@ -75,18 +76,17 @@ def create_app():
     def rate_limit_handler(e):
         return render_template('errors/429.html'), 429
 
-    # register blueprints
-    from routes.auth_routes import auth
-    from routes.customer_routes import customer
-    from routes.admin_routes import admin
-    from routes.order_routes import order
-    from routes.measurement_routes import measurement
-    from routes.shop_routes import shop
-    from routes.admin_shop_routes import admin_shop
-    from routes.print_routes import print_bp
-    from routes.feedback_routes import feedback_bp
-    from routes.appointment_routes import appointment_bp
-    from routes.lang_routes import lang_bp
+    from routes.auth_routes         import auth
+    from routes.customer_routes     import customer
+    from routes.admin_routes        import admin
+    from routes.order_routes        import order
+    from routes.measurement_routes  import measurement
+    from routes.shop_routes         import shop
+    from routes.admin_shop_routes   import admin_shop
+    from routes.print_routes        import print_bp
+    from routes.feedback_routes     import feedback_bp
+    from routes.appointment_routes  import appointment_bp
+    from routes.lang_routes         import lang_bp
     from routes.notification_routes import notification_bp
 
     app.register_blueprint(auth)
@@ -102,57 +102,38 @@ def create_app():
     app.register_blueprint(lang_bp)
     app.register_blueprint(notification_bp)
 
-    # create tables only
     with app.app_context():
         db.create_all()
+        create_default_admin(app)
 
     return app
 
 
-# ---------------- RUN APP ----------------
+def create_default_admin(app):
+    from models.user_model import User
+    with app.app_context():
+        existing = User.query.filter_by(email='admin@kalamu.com').first()
+        if not existing:
+            admin_user = User(
+                full_name = 'CEO Admin',
+                email     = 'admin@kalamu.com',
+                phone     = '07082815719',
+                role      = 'admin'
+            )
+            admin_user.set_password('Muhammad9891@')
+            db.session.add(admin_user)
+            db.session.commit()
+            print('=' * 50)
+            print('ADMIN CREATED SUCCESSFULLY')
+            print('Email:    admin@kalamu.com')
+            print('Password: Muhammad9891@')
+            print('=' * 50)
+        else:
+            print('Admin already exists — skipping creation')
+
 
 application = create_app()
 
-
-def create_admin():
-    try:
-        from models.user_model import User
-        from extensions import db
-        from werkzeug.security import generate_password_hash
-
-        admin_email = "admin@kalamu.com"
-        admin_password = "Muhammad9891@"
-
-        existing = User.query.filter_by(email=admin_email).first()
-
-        if not existing:
-            admin = User(
-                email=admin_email,
-                password=generate_password_hash(admin_password),
-                role="admin"
-            )
-            db.session.add(admin)
-            db.session.commit()
-            print("ADMIN CREATED")
-
-    except Exception as e:
-        print("ADMIN CREATION FAILED:", e)
-
-
-# SAFE STARTUP (IMPORTANT)
-with application.app_context():
-    create_admin()
-@application.route("/debug-admin")
-def debug_admin():
-    from models.user_model import User
-
-    admin = User.query.filter_by(email="admin@kalamu.com").first()
-
-    if admin:
-        return f"FOUND: {admin.email}"
-    return "NOT FOUND"
-
-if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    application.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    application.run(host='0.0.0.0', port=port, debug=False)
