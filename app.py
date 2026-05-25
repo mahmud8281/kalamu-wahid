@@ -111,6 +111,9 @@ def create_app():
 
 # ---------------- RUN APP ----------------
 
+application = create_app()
+
+
 def create_admin():
     try:
         from models.user_model import User
