@@ -69,10 +69,10 @@ def create_app():
         return render_template('errors/404.html'), 404
 
     @app.errorhandler(500)
-def server_error(e):
-    import traceback
-    print('500 ERROR:', traceback.format_exc())
-    return render_template('errors/500.html'), 500
+    def server_error(e):
+        import traceback
+        print('500 ERROR:', traceback.format_exc())
+        return render_template('errors/500.html'), 500
 
     @app.errorhandler(429)
     def rate_limit_handler(e):
@@ -108,7 +108,6 @@ def server_error(e):
         db.create_all()
         create_default_admin(app)
 
-    # create upload folder if it doesn't exist
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     return app
