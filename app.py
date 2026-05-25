@@ -103,11 +103,11 @@ def create_app():
     app.register_blueprint(notification_bp)
 
     with app.app_context():
-    db.create_all()
-    create_default_admin(app)
+        db.create_all()
+        create_default_admin(app)
 
-# create upload folder if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    # create upload folder if it doesn't exist
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     return app
 
