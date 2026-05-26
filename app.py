@@ -35,6 +35,13 @@ def create_app():
             return "Invalid filename", 404
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+    @app.route('/reset-db-kalamu-2024')
+    def reset_db():
+        db.drop_all()
+        db.create_all()
+        create_default_admin(app)
+        return 'Database reset and admin recreated successfully.'
+
     @app.context_processor
     def inject_globals():
         unread = 0
@@ -109,11 +116,6 @@ def create_app():
         create_default_admin(app)
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    @app.route('/reset-db-kalamu-2024')
-    def reset_db():
-    db.drop_all()
-    db.create_all()
-    return 'Database reset successfully. Remove this route now.'
 
     return app
 
