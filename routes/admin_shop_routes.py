@@ -54,70 +54,119 @@ def add_product():
     in_stock  = request.form.get('in_stock') == 'on'
     stock_qty = int(request.form.get('stock_qty') or 0)
 
+    print(f'PRODUCT UPLOAD — files received: {len(files)}')
+    for i, f in enumerate(files):
+        print(f'  File {i}: "{f.filename}" | type: {f.content_type}')
+
     if not files or all(f.filename == '' for f in files):
         flash('Please select at least one image.', 'danger')
         return redirect(url_for('admin_shop.products'))
 
-    from utils.cloudinary_upload import (is_cloudinary_configured,
-                                         upload_image as cloud_upload)
-    from utils.upload import safe_save
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    api_key    = os.environ.get('CLOUDINARY_API_KEY')
+    api_secret = os.environ.get('CLOUDINARY_API_SECRET')
+    use_cloudinary = bool(cloud_name and api_key and api_secret)
 
-    use_cloudinary = is_cloudinary_configured()
+    print(f'Cloudinary configured: {use_cloudinary}')
+
     uploaded = 0
     rejected = 0
 
     for i, file in enumerate(files):
         if not file or file.filename == '':
+            print(f'File {i}: skipped — empty')
             continue
         try:
+            print(f'Processing file {i}: {file.filename}')
+
             if use_cloudinary:
-                url, public_id = cloud_upload(
-                    file, folder='kalamu_wahid/products')
-                if url:
-                    p = Product(
-                        name        = name,
-                        description = desc,
-                        category    = category,
-                        price       = price,
-                        unit        = unit,
-                        in_stock    = in_stock,
-                        stock_qty   = stock_qty,
-                        featured    = featured if i == 0 else False,
-                        image       = url,
-                        public_id   = public_id
-                    )
-                    db.session.add(p)
-                    uploaded += 1
-                else:
-                    rejected += 1
+                from utils.cloudinary_upload import (
+                    upload_image as cloud_upload,
+                    compress_image
+                )
+                import cloudinary
+                import cloudinary.uploader
+                cloudinary.config(
+                    cloud_name = cloud_name,
+                    api_key    = api_key,
+                    api_secret = api_secret,
+                    secure     = True
+                )
+                # compress before upload
+                compressed = compress_image(file)
+                compressed.seek(0)
+                result    = cloudinary.uploader.upload(
+                    compressed,
+                    folder        = 'kalamu_wahid/products',
+                    resource_type = 'image',
+                )
+                url       = result['secure_url']
+                public_id = result['public_id']
+                print(f'Cloudinary product upload OK: {url}')
+
+                p = Product(
+                    name        = name,
+                    description = desc,
+                    category    = category,
+                    price       = price,
+                    unit        = unit,
+                    in_stock    = in_stock,
+                    stock_qty   = stock_qty,
+                    featured    = featured if i == 0 else False,
+                    image       = url,
+                    public_id   = public_id
+                )
+                db.session.add(p)
+                db.session.commit()
+                uploaded += 1
+
             else:
-                filename = safe_save(
-                    file, Config.UPLOAD_FOLDER, prefix='product')
-                if filename:
-                    p = Product(
-                        name        = name,
-                        description = desc,
-                        category    = category,
-                        price       = price,
-                        unit        = unit,
-                        in_stock    = in_stock,
-                        stock_qty   = stock_qty,
-                        featured    = featured if i == 0 else False,
-                        image       = filename
-                    )
-                    db.session.add(p)
-                    uploaded += 1
-                else:
+                import uuid
+                from werkzeug.utils import secure_filename
+                ALLOWED  = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+                original = secure_filename(file.filename)
+                if not original or '.' not in original:
+                    print(f'File {i}: rejected — no extension')
                     rejected += 1
+                    continue
+                ext = original.rsplit('.', 1)[1].lower()
+                if ext not in ALLOWED:
+                    print(f'File {i}: rejected — bad ext {ext}')
+                    rejected += 1
+                    continue
+                filename = f"product_{uuid.uuid4().hex}.{ext}"
+                os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+                file.seek(0)
+                file.save(os.path.join(Config.UPLOAD_FOLDER, filename))
+                print(f'Local save OK: {filename}')
+                p = Product(
+                    name        = name,
+                    description = desc,
+                    category    = category,
+                    price       = price,
+                    unit        = unit,
+                    in_stock    = in_stock,
+                    stock_qty   = stock_qty,
+                    featured    = featured if i == 0 else False,
+                    image       = filename
+                )
+                db.session.add(p)
+                db.session.commit()
+                uploaded += 1
+
         except Exception as e:
-            print(f'Product upload error: {e}')
+            import traceback
+            print(f'PRODUCT UPLOAD ERROR file {i}: {e}')
+            print(traceback.format_exc())
+            db.session.rollback()
             rejected += 1
 
-    db.session.commit()
+    print(f'DONE: {uploaded} uploaded, {rejected} rejected')
+
     if uploaded:
         flash(f'{uploaded} product(s) added under "{name}".', 'success')
     if rejected:
-        flash(f'{rejected} file(s) rejected.', 'danger')
+        flash(f'{rejected} file(s) failed to upload. Check image size.', 'danger')
     return redirect(url_for('admin_shop.products'))
 
 @admin_shop.route('/edit/<int:product_id>', methods=['POST'])
