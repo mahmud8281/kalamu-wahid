@@ -109,6 +109,11 @@ def create_app():
         create_default_admin(app)
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    @app.route('/reset-db-kalamu-2024')
+    def reset_db():
+    db.drop_all()
+    db.create_all()
+    return 'Database reset successfully. Remove this route now.'
 
     return app
 
