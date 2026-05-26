@@ -1,3 +1,4 @@
+from flask import Flask, send_from_directory, render_template, redirect, request
 from flask import Flask, send_from_directory, render_template
 from config import Config
 from extensions import db, login_manager, limiter
@@ -84,6 +85,11 @@ def create_app():
     @app.errorhandler(429)
     def rate_limit_handler(e):
         return render_template('errors/429.html'), 429
+   
+    @app.errorhandler(413)
+    def file_too_large(e):
+        flask('File is too large. Maximum size is 5MB per image.', 'danger')
+        return redirect(request.referrer or '/')    
 
     from routes.auth_routes         import auth
     from routes.customer_routes     import customer
